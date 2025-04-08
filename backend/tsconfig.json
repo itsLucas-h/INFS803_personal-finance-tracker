@@ -11,7 +11,8 @@
     "rootDir": "./src",
     "resolveJsonModule": true,
     "noImplicitAny": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
