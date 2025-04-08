@@ -1,2 +1,4 @@
 import { User } from './user';
-export { User };
+import { Transaction } from './transaction';
+
+export { User, Transaction };

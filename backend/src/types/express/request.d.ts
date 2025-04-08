@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-export type Controller = (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export type Controller = (req: Request, res: Response, next: NextFunction) => Promise<any>;
 
 declare global {
   namespace Express {
