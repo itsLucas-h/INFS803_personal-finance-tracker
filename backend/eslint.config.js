@@ -13,6 +13,7 @@ export default [
       parser: tsParser,
       parserOptions: {
         project: './tsconfig.json',
+        sourceType: 'script',
       },
       globals: {
         ...globals.node,

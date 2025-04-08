@@ -12,7 +12,6 @@ app.use(express.json());
 app.get('/', (_, res) => {
   res.send('🚀 App deployed successfully from GitHub Actions to EC2!');
 });
-
 app.get('/', (_, res) => {
   res.send('🎉 TypeScript Express Server is running!');
 });
