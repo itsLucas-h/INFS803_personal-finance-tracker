@@ -1,6 +1,5 @@
 import { Controller } from '../types/express/request';
 import { Transaction } from '../models';
-import { Request, Response, NextFunction } from 'express';
 
 export const createTransaction: Controller = async (req, res, next) => {
   try {
