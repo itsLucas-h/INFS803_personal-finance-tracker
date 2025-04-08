@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 
@@ -18,5 +19,7 @@ app.get('/', (_, res) => {
 app.get('/health', (_, res) => {
   res.send('OK');
 });
+
+app.use('/api/auth', authRoutes);
 
 export default app;

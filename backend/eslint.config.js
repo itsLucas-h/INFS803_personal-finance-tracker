@@ -27,6 +27,10 @@ module.exports = [
     rules: {
       ...ts.configs.recommended.rules,
       'prettier/prettier': 'error',
+
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-redeclare': 'off',
     },
   },
   {
