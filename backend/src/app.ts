@@ -1,6 +1,8 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import { apiLimiter } from './middleware/rateLimit.middleware';
 
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
@@ -16,6 +18,8 @@ const app: Application = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(helmet());
+app.use(apiLimiter);
 
 app.get('/', (_: Request, res: Response) => {
   res.send('🚀 Server is up and running!');
