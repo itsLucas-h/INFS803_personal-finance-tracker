@@ -9,8 +9,10 @@ interface BudgetAttributes {
   amount: number;
 }
 
+type BudgetCreationAttributes = Optional<BudgetAttributes, 'id'>;
+
 export class Budget
-  extends Model<BudgetAttributes, Optional<BudgetAttributes, 'id'>>
+  extends Model<BudgetAttributes, BudgetCreationAttributes>
   implements BudgetAttributes
 {
   public id!: number;

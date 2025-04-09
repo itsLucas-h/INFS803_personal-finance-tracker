@@ -1,6 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
 
+// Full shape of the Goal model
 interface GoalAttributes {
   id: number;
   userId: number;
@@ -10,10 +11,9 @@ interface GoalAttributes {
   deadline?: Date;
 }
 
-export class Goal
-  extends Model<GoalAttributes, Optional<GoalAttributes, 'id' | 'currentAmount' | 'deadline'>>
-  implements GoalAttributes
-{
+type GoalCreationAttributes = Optional<GoalAttributes, 'id' | 'currentAmount' | 'deadline'>;
+
+export class Goal extends Model<GoalAttributes, GoalCreationAttributes> implements GoalAttributes {
   public id!: number;
   public userId!: number;
   public title!: string;

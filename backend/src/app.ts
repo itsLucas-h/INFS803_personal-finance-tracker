@@ -8,6 +8,7 @@ import transactionRoutes from './routes/transaction.routes';
 import goalRoutes from './routes/goal.routes';
 import budgetRoutes from './routes/budget.routes';
 import reportRoutes from './routes/report.routes';
+import fileRoutes from './routes/file.routes';
 
 dotenv.config();
 
@@ -30,5 +31,6 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/files', fileRoutes);
 
 export default app;

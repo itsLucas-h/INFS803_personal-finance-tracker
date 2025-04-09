@@ -11,8 +11,10 @@ interface TransactionAttributes {
   date: Date;
 }
 
+type TransactionCreationAttributes = Optional<TransactionAttributes, 'id'>;
+
 export class Transaction
-  extends Model<TransactionAttributes, Optional<TransactionAttributes, 'id'>>
+  extends Model<TransactionAttributes, TransactionCreationAttributes>
   implements TransactionAttributes
 {
   public id!: number;
