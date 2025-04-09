@@ -1,6 +1,5 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
-import { User } from './user';
 
 interface GoalAttributes {
   id: number;
@@ -60,6 +59,3 @@ Goal.init(
     tableName: 'goals',
   },
 );
-
-Goal.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(Goal, { foreignKey: 'userId', as: 'goals' });
