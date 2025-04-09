@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Build project
+        run: npm run build
+        working-directory: backend
+
+      - name: Run tests
+        run: npm test
+        working-directory: backend
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 via SSH and Docker
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/github-actions-test
+            git reset --hard origin/main
+            git pull origin main
+
+            docker stop github-actions-test || true
+            docker rm github-actions-test || true
+
+            docker build -t github-actions-test .
+
+            docker run -d -p 80:3000 --name github-actions-test github-actions-test
+
+            docker image prune -f
+            docker container prune -f
