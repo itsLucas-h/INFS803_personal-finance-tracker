@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import transactionRoutes from './routes/transaction.routes';
+import goalRoutes from './routes/goal.routes';
 
 dotenv.config();
 
@@ -24,5 +25,6 @@ app.get('/health', (_: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/goals', goalRoutes);
 
 export default app;
