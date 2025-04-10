@@ -4,13 +4,13 @@ import {
   getTransactions,
   updateTransaction,
   deleteTransaction,
-} from '../controllers/transaction.controller';
-import { protect } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validate.middleware';
+} from '../controllers/transaction.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
 import {
   createTransactionSchema,
   updateTransactionSchema,
-} from '../validators/transaction.validator';
+} from '../validators/transaction.validator.js';
 
 const router = Router();
 

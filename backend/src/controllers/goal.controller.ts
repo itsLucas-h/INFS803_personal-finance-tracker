@@ -1,5 +1,5 @@
-import { Goal } from '../models';
-import { Controller } from '../types/express/request';
+import { Goal } from '../models/index.js';
+import { Controller } from '../types/express/request.js';
 
 export const createGoal: Controller = async (req, res, next) => {
   try {

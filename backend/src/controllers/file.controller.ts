@@ -1,9 +1,9 @@
-import { Controller } from '../types/express/request';
-import { uploadToS3 } from '../utils/s3Uploader';
-import { generatePresignedUrl } from '../utils/s3Presigner';
-import { File as FileModel } from '../models';
+import { Controller } from '../types/express/request.js';
+import { uploadToS3 } from '../utils/s3Uploader.js';
+import { generatePresignedUrl } from '../utils/s3Presigner.js';
+import { File as FileModel } from '../models/index.js';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { s3 } from '../config/s3';
+import { s3 } from '../config/s3.js';
 
 const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
 

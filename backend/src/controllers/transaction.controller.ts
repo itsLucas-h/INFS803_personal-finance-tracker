@@ -1,5 +1,5 @@
-import { Controller } from '../types/express/request';
-import { Transaction } from '../models';
+import { Controller } from '../types/express/request.js';
+import { Transaction } from '../models/index.js';
 
 export const createTransaction: Controller = async (req, res, next) => {
   try {

@@ -1,8 +1,8 @@
-import { User } from './user';
-import { Transaction } from './transaction';
-import { Goal } from './goal';
-import { Budget } from './budget';
-import { File } from './file';
+import { User } from './user.js';
+import { Transaction } from './transaction.js';
+import { Goal } from './goal.js';
+import { Budget } from './budget.js';
+import { File } from './file.js';
 
 User.hasMany(Transaction, { foreignKey: 'userId' });
 Transaction.belongsTo(User, { foreignKey: 'userId' });

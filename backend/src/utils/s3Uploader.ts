@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3 } from '../config/s3';
+import { s3 } from '../config/s3.js';
 import type { Express } from 'express';
 
 const storage = multer.memoryStorage();

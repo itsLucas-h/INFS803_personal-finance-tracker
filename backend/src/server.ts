@@ -1,6 +1,6 @@
 import http from 'http';
-import app from './app';
-import { testConnection, sequelize } from './config/db';
+import app from './app.js';
+import { testConnection, sequelize } from './config/db.js';
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);

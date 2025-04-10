@@ -1,4 +1,4 @@
-import { Controller } from '../types/express/request';
+import { Controller } from '../types/express/request.js';
 
 export const getMe: Controller = async (req, res, next) => {
   try {

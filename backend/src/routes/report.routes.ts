@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { protect } from '../middleware/auth.middleware';
+import { protect } from '../middleware/auth.middleware.js';
 import {
   getSummaryReport,
   getTrendsReport,
   getBudgetVsActualReport,
-} from '../controllers/report.controller';
+} from '../controllers/report.controller.js';
 
 const router = Router();
 

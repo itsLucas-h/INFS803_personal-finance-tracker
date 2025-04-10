@@ -2,15 +2,15 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
-import { apiLimiter } from './middleware/rateLimit.middleware';
+import { apiLimiter } from './middleware/rateLimit.middleware.js';
 
-import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user.routes';
-import transactionRoutes from './routes/transaction.routes';
-import goalRoutes from './routes/goal.routes';
-import budgetRoutes from './routes/budget.routes';
-import reportRoutes from './routes/report.routes';
-import fileRoutes from './routes/file.routes';
+import authRoutes from './routes/auth.routes.js';
+import userRoutes from './routes/user.routes.js';
+import transactionRoutes from './routes/transaction.routes.js';
+import goalRoutes from './routes/goal.routes.js';
+import budgetRoutes from './routes/budget.routes.js';
+import reportRoutes from './routes/report.routes.js';
+import fileRoutes from './routes/file.routes.js';
 
 dotenv.config();
 

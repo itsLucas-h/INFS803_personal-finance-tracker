@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { protect } from '../middleware/auth.middleware';
-import { upload } from '../utils/s3Uploader';
+import { protect } from '../middleware/auth.middleware.js';
+import { upload } from '../utils/s3Uploader.js';
 import {
   handleFileUpload,
   getPresignedFileUrl,
   getMyFiles,
   deleteFile,
-} from '../controllers/file.controller';
+} from '../controllers/file.controller.js';
 
 const router = Router();
 

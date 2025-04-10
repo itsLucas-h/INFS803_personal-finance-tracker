@@ -1,5 +1,5 @@
-import { Budget } from '../models';
-import { Controller } from '../types/express/request';
+import { Budget } from '../models/index.js';
+import { Controller } from '../types/express/request.js';
 
 export const createBudget: Controller = async (req, res, next) => {
   const { month, category, amount } = req.body;

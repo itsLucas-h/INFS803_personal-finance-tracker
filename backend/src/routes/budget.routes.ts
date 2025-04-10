@@ -4,10 +4,10 @@ import {
   getBudgets,
   updateBudget,
   deleteBudget,
-} from '../controllers/budget.controller';
-import { protect } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validate.middleware';
-import { createBudgetSchema, updateBudgetSchema } from '../validators/budget.validator';
+} from '../controllers/budget.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
+import { createBudgetSchema, updateBudgetSchema } from '../validators/budget.validator.js';
 
 const router = Router();
 

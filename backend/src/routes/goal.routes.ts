@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { createGoal, getGoals, updateGoal, deleteGoal } from '../controllers/goal.controller';
-import { protect } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validate.middleware';
-import { createGoalSchema, updateGoalSchema } from '../validators/goal.validator';
+import { createGoal, getGoals, updateGoal, deleteGoal } from '../controllers/goal.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
+import { createGoalSchema, updateGoalSchema } from '../validators/goal.validator.js';
 
 const router = Router();
 

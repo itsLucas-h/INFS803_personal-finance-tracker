@@ -1,5 +1,5 @@
-import { Controller } from '../types/express/request';
-import { Transaction, Budget } from '../models';
+import { Controller } from '../types/express/request.js';
+import { Transaction, Budget } from '../models/index.js';
 import { Op, fn, col, where, literal } from 'sequelize';
 
 export const getSummaryReport: Controller = async (req, res, next) => {
