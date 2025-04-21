@@ -15,15 +15,15 @@ jobs:
         with:
           node-version: 23
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: npm ci
         working-directory: backend
 
-      - name: Build project
+      - name: Build backend
         run: npm run build
         working-directory: backend
 
-      - name: Run tests
+      - name: Run backend tests
         run: npm test
         working-directory: backend
 
@@ -39,18 +39,21 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Update system and install required packages
+            # Update system
             sudo apt-get update
             sudo apt-get install -y git curl
 
-            # Install Docker if not installed
+            # Install Docker if not already installed
             if ! command -v docker &> /dev/null; then
               curl -fsSL https://get.docker.com -o get-docker.sh
               sudo sh get-docker.sh
               sudo usermod -aG docker $USER
             fi
 
-            # Clone or update the repo
+            # Clean up Docker to prevent ENOSPC errors
+            docker system prune -af --volumes
+
+            # Clone or update repository
             if [ ! -d "~/INFS803_personal-finance-tracker" ]; then
               git clone https://github.com/itsLucas-h/INFS803_personal-finance-tracker.git ~/INFS803_personal-finance-tracker
             fi
@@ -70,6 +73,3 @@ jobs:
             docker rm frontend || true
             docker build -t frontend ./frontend
             docker run -d -p 3000:80 --name frontend frontend
-
-            docker image prune -f
-            docker container prune -f
