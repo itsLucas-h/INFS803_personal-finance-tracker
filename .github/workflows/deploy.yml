@@ -47,8 +47,9 @@ jobs:
             if ! command -v docker &> /dev/null; then
               curl -fsSL https://get.docker.com -o get-docker.sh
               sudo sh get-docker.sh
+
+              # Add the EC2 user to the docker group
               sudo usermod -aG docker $USER
-              newgrp docker
             fi
 
             # Clone or update repo
@@ -59,9 +60,6 @@ jobs:
             cd ~/INFS803_personal-finance-tracker
             git fetch origin main
             git reset --hard origin/main
-
-            # Optional: create .env file or export environment vars
-            # echo "NODE_ENV=production" > backend/.env
 
             # Build & run your app
             docker stop personal-finance-tracker || true
