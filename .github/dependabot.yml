@@ -3,7 +3,8 @@ updates:
   - package-ecosystem: "npm"
     directory: "/backend"
     schedule:
-      interval: "weekly"              
+      interval: "weekly"
+    target-branch: "development"      
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
@@ -12,9 +13,10 @@ updates:
       - "backend"
 
   - package-ecosystem: "github-actions"
-    directory: "/"                    
+    directory: "/"
     schedule:
       interval: "weekly"
+    target-branch: "development"      
     commit-message:
       prefix: "chore(actions)"
     labels:
@@ -25,6 +27,7 @@ updates:
   #   directory: "/frontend"
   #   schedule:
   #     interval: "weekly"
+  #   target-branch: "development"     
   #   open-pull-requests-limit: 5
   #   commit-message:
   #     prefix: "chore(deps)"
