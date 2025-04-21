@@ -16,7 +16,15 @@ dotenv.config();
 
 const app: Application = express();
 
-app.use(cors());
+const allowedOrigins = ['http://localhost:3000', 'http://52.65.129.87:3000'];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 app.use(helmet());
 app.use(apiLimiter);
