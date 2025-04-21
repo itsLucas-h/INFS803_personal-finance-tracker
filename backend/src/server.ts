@@ -2,7 +2,7 @@ import http from 'http';
 import app from './app.js';
 import { testConnection, sequelize } from './config/db.js';
 
-const PORT = process.env.PORT || 3000;
+const PORT: number = parseInt(process.env.PORT || '5000', 10);
 const server = http.createServer(app);
 
 const startServer = async () => {
@@ -19,8 +19,8 @@ const startServer = async () => {
     process.exit(1);
   }
 
-  server.listen(PORT, () => {
-    console.log(`🚀 Server is running at http://localhost:${PORT}`);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server is running at http://0.0.0.0:${PORT}`);
   });
 };
 
