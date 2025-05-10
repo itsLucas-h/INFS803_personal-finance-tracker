@@ -1,259 +1,203 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+// port jwtDecode from 'jwt-decode'; // Optional: For decoding JWTs if needed
 
 interface BudgetEntry {
+  id?: number;
   month: string;
   amount: number;
-  category?: string;
-}
-
-// 🎨 Default category colors
-const defaultColors: Record<string, string> = {
-  Food: '#82ca9d',
-  Rent: '#8884d8',
-  Transport: '#ffc658',
-  Health: '#ff7f7f',
-  Entertainment: '#a4de6c',
-  Utilities: '#8dd1e1',
-  Savings: '#d0ed57'
-};
-
-// 🎨 Cache for dynamic colors
-const customColorMap: Record<string, string> = {};
-
-function getCategoryColor(category: string): string {
-  if (defaultColors[category]) return defaultColors[category];
-
-  if (!customColorMap[category]) {
-    const randomColor = `hsl(${Math.floor(Math.random() * 360)}, 60%, 65%)`;
-    customColorMap[category] = randomColor;
-  }
-
-  return customColorMap[category];
+  category: string;
 }
 
 export default function BudgetsPage() {
+  const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
   const [month, setMonth] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
+  const [editId, setEditId] = useState<number | null>(null);
   const [categories, setCategories] = useState<string[]>([
-    'Food',
-    'Rent',
-    'Transport',
-    'Health',
-    'Entertainment',
-    'Utilities',
-    'Savings',
+    'Food', 'Rent', 'Transport', 'Health', 'Entertainment', 'Utilities', 'Savings',
   ]);
-  const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const API_BASE = 'http://localhost:5000/api/budgets'; // Change if deployed
+  const DEV_JWT_TOKEN = 'your_generated_jwt_token'; // Replace with the generated token
+
+  const fetchBudgets = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(API_BASE, {
+        headers: {
+          'Authorization': `Bearer ${DEV_JWT_TOKEN}`, // Include the JWT token
+        },
+      });
+      if (!res.ok) throw new Error('Failed to fetch budgets');
+      const data = await res.json();
+      if (Array.isArray(data)) setBudgets(data);
+      else throw new Error('Unexpected response format');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const stored = localStorage.getItem('budgets');
-    if (stored) {
-      setBudgets(JSON.parse(stored));
-    }
+    fetchBudgets();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('budgets', JSON.stringify(budgets));
-  }, [budgets]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const chosenCategory = customCategory.trim() !== '' ? customCategory : category;
-
-    if (!chosenCategory) {
-      alert("Please select or add a category.");
-      return;
-    }
-
-    if (customCategory && !categories.includes(customCategory)) {
-      setCategories([...categories, customCategory]);
-    }
-
-    const exists = budgets.find(
-      (b) => b.month === month && b.category === chosenCategory
-    );
-    if (exists) {
-      alert(`A budget for "${chosenCategory}" in ${month} already exists.`);
-      return;
-    }
-
-    const newEntry: BudgetEntry = {
+    const chosenCategory = customCategory.trim() || category;
+    if (!chosenCategory || !month || !amount) return;
+    const payload = {
       month,
       amount: Math.floor(parseFloat(amount)),
       category: chosenCategory,
     };
 
-    setBudgets([...budgets, newEntry]);
-    setMonth('');
-    setAmount('');
-    setCategory('');
-    setCustomCategory('');
-  };
-
-  const groupBudgetsByMonth = () => {
-    const grouped: { [month: string]: BudgetEntry[] } = {};
-    budgets.forEach((entry) => {
-      if (!grouped[entry.month]) {
-        grouped[entry.month] = [];
+    try {
+      if (editId) {
+        const res = await fetch(`${API_BASE}/${editId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEV_JWT_TOKEN}`, // Include the JWT token
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Failed to update budget');
+        const updated = await res.json();
+        setBudgets(prev => prev.map(b => b.id === editId ? updated : b));
+        setEditId(null);
+      } else {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEV_JWT_TOKEN}`, // Include the JWT token
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Failed to add budget');
+        const newEntry = await res.json();
+        setBudgets(prev => [...prev, newEntry]);
       }
-      grouped[entry.month].push(entry);
-    });
-    return grouped;
+      if (!categories.includes(chosenCategory)) {
+        setCategories(prev => [...prev, chosenCategory]);
+      }
+      setMonth(''); setAmount(''); setCategory(''); setCustomCategory('');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred while submitting the budget');
+    }
   };
 
-  const groupedBudgets = groupBudgetsByMonth();
+  const handleDelete = async (id?: number) => {
+    if (!id) return;
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${DEV_JWT_TOKEN}`, // Include the JWT token
+        },
+      });
+      if (!res.ok) throw new Error('Failed to delete budget');
+      setBudgets(prev => prev.filter(b => b.id !== id));
+    } catch (err: any) {
+      setError(err.message || 'An error occurred while deleting the budget');
+    }
+  };
 
-  // ✅ Show only categories with budget entries
-  const chartData = Array.from(new Set(budgets.map(b => b.category)))
-    .map((cat) => {
-      const total = budgets
-        .filter((b) => b.category === cat)
-        .reduce((sum, b) => sum + b.amount, 0);
-      return { name: cat!, amount: total };
-    })
-    .filter(data => data.amount > 0); // ensures no empty bars
+  const handleEdit = (entry: BudgetEntry) => {
+    setEditId(entry.id!);
+    setMonth(entry.month);
+    setAmount(entry.amount.toString());
+    setCategory(entry.category);
+  };
+
+  const groupedBudgets = budgets
+    .filter(entry => entry.month && entry.category && typeof entry.amount === 'number')
+    .reduce((acc, entry) => {
+      if (!acc[entry.month]) acc[entry.month] = [];
+      acc[entry.month].push(entry);
+      return acc;
+    }, {} as Record<string, BudgetEntry[]>);
 
   return (
     <DashboardLayout>
       <div className="bg-white text-black min-h-screen px-8 py-6">
         <h1 className="text-2xl font-bold mb-4">Monthly Budget</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mb-8">
-          <div>
-            <label className="block mb-1 font-medium">Month:</label>
-            <input
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              required
-              className="border p-2 rounded w-full"
-            />
-          </div>
+        {error && <div className="text-red-600 mb-4">{error}</div>}
+        {loading ? (
+          <div>Loading budgets...</div>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+              <div>
+                <label className="block mb-1 font-medium">Month:</label>
+                <input type="month" value={month} onChange={e => setMonth(e.target.value)} required className="border p-2 rounded w-full" />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Target Amount ($):</label>
+                <input type="number" value={amount} onChange={e => setAmount(e.target.value)} required className="border p-2 rounded w-full" />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Select Category:</label>
+                <select value={category} onChange={e => setCategory(e.target.value)} className="border p-2 rounded w-full">
+                  <option value="">-- Choose --</option>
+                  {categories.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Or Add New Category:</label>
+                <input type="text" value={customCategory} onChange={e => setCustomCategory(e.target.value)} className="border p-2 rounded w-full" />
+              </div>
+              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                {editId ? 'Save Changes' : 'Add Budget'}
+              </button>
+            </form>
 
-          <div>
-            <label className="block mb-1 font-medium">Target Amount ($):</label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              className="border p-2 rounded w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Select Category:</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="border p-2 rounded w-full"
-            >
-              <option value="">-- Choose a category --</option>
-              {categories.map((cat, idx) => (
-                <option key={idx} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Or Add New Category:</label>
-            <input
-              type="text"
-              value={customCategory}
-              onChange={(e) => setCustomCategory(e.target.value)}
-              placeholder="Enter custom category"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            Add Budget
-          </button>
-        </form>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Budgets by Month</h2>
-          {Object.keys(groupedBudgets).length === 0 ? (
-            <p className="text-gray-500">No budgets added yet.</p>
-          ) : (
-            Object.entries(groupedBudgets).map(([month, entries]) => {
+            {Object.entries(groupedBudgets).map(([month, entries]) => {
               const total = entries.reduce((sum, e) => sum + e.amount, 0);
               return (
-                <div key={month} className="mb-8 border rounded shadow-sm p-4">
-                  <h3 className="text-lg font-bold mb-2">{month}</h3>
-                  <table className="w-full border text-left">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="p-2 border">Category</th>
-                        <th className="p-2 border">Amount ($)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {entries.map((entry, index) => (
-                        <tr key={index}>
-                          <td className="p-2 border">{entry.category}</td>
-                          <td className="p-2 border">${entry.amount}</td>
+                <div key={month} className="mb-8 bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="bg-gray-100 px-6 py-3 text-lg font-semibold border-b">Budgets for {month}</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
+                        <tr>
+                          <th className="px-6 py-3 border-b">Category</th>
+                          <th className="px-6 py-3 border-b">Amount ($)</th>
+                          <th className="px-6 py-3 border-b">Actions</th>
                         </tr>
-                      ))}
-                      <tr className="font-semibold bg-gray-50">
-                        <td className="p-2 border">Total</td>
-                        <td className="p-2 border">${total}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {entries.map((entry, index) => (
+                          <tr key={entry.id || index} className="hover:bg-gray-50 transition">
+                            <td className="px-6 py-4 border-b">{entry.category}</td>
+                            <td className="px-6 py-4 border-b font-medium text-gray-800">${entry.amount}</td>
+                            <td className="px-6 py-4 border-b space-x-4">
+                              <button onClick={() => handleEdit(entry)} className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition">Edit</button>
+                              <button onClick={() => handleDelete(entry.id)} className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded hover:bg-red-200 transition">Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="bg-gray-100 font-bold">
+                          <td className="px-6 py-3">Total</td>
+                          <td className="px-6 py-3">${total}</td>
+                          <td className="px-6 py-3" />
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               );
-            })
-          )}
-        </div>
-
-        {/* 📊 Category Bar Chart */}
-        {chartData.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-xl font-semibold mb-2">Budget Breakdown by Category</h2>
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  layout="vertical"
-                  margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
-                >
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" />
-                  <Tooltip />
-                  {chartData.map((entry) => (
-                    <Bar
-                      key={entry.name}
-                      dataKey="amount"
-                      data={[entry]}
-                      name={entry.name}
-                      fill={getCategoryColor(entry.name)}
-                      barSize={20}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+            })}
+          </>
         )}
       </div>
     </DashboardLayout>
