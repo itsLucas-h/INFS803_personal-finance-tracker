@@ -2,9 +2,6 @@ import { TransactionData } from '@/components/transaction';
 
 const API_URL = 'http://localhost:5000/api/transactions';
 
-// Temporary development token - REMOVE IN PRODUCTION
-const DEV_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
-
 export const transactionService = {
   async createTransaction(transaction: TransactionData) {
     try {
@@ -13,7 +10,6 @@ export const transactionService = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${DEV_TOKEN}`
         },
         body: JSON.stringify(transaction),
       });
@@ -34,9 +30,6 @@ export const transactionService = {
     try {
       console.log('Fetching from:', `${API_URL}`);
       const response = await fetch(`${API_URL}`, {
-        headers: {
-          'Authorization': `Bearer ${DEV_TOKEN}`
-        }
       });
 
       if (!response.ok) {
@@ -56,9 +49,6 @@ export const transactionService = {
       console.log('Deleting transaction:', `${API_URL}/${id}`);
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${DEV_TOKEN}`
-        }
       });
 
       if (!response.ok) {
