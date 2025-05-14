@@ -2,6 +2,11 @@ import { TransactionData } from '@/components/transaction';
 
 const API_URL = 'http://localhost:5000/api/transactions';
 
+const getAuthToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
+};
+
 export const transactionService = {
   async createTransaction(transaction: TransactionData) {
     try {
