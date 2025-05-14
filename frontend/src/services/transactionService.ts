@@ -2,20 +2,25 @@ import { TransactionData } from '@/components/transaction';
 
 const API_URL = 'http://localhost:5000/api/transactions';
 
-// Temporary development token - REMOVE IN PRODUCTION
-const DEV_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+const getAuthToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
+};
 
 export const transactionService = {
   async createTransaction(transaction: TransactionData) {
     try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
       console.log('Sending request to:', `${API_URL}`);
       const response = await fetch(`${API_URL}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${DEV_TOKEN}`
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(transaction),
+        body: JSON.stringify({ body: transaction }),
       });
 
       if (!response.ok) {
@@ -32,10 +37,13 @@ export const transactionService = {
 
   async getTransactions() {
     try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
       console.log('Fetching from:', `${API_URL}`);
       const response = await fetch(`${API_URL}`, {
         headers: {
-          'Authorization': `Bearer ${DEV_TOKEN}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -53,11 +61,14 @@ export const transactionService = {
 
   async deleteTransaction(id: string) {
     try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
       console.log('Deleting transaction:', `${API_URL}/${id}`);
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${DEV_TOKEN}`
+          'Authorization': `Bearer ${token}`
         }
       });
 

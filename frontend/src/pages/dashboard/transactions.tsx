@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { TransactionForm, TransactionData } from '@/components/transaction';
 import { transactionService } from '@/services/transactionService';
+import { withAuth } from "@/components/auth/withAuth";
 
 interface Transaction extends TransactionData {
   id: string;
   createdAt: string;
 }
 
-export default function TransactionsPage() {
+function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,8 +20,8 @@ export default function TransactionsPage() {
 
   const fetchTransactions = async () => {
     try {
-      const data = await transactionService.getTransactions();
-      setTransactions(data);
+      const response = await transactionService.getTransactions();
+      setTransactions(response.transactions || []);
       setError(null);
     } catch (err) {
       setError('Failed to fetch transactions');
@@ -32,8 +33,8 @@ export default function TransactionsPage() {
 
   const handleSubmit = async (transaction: TransactionData) => {
     try {
-      const newTransaction = await transactionService.createTransaction(transaction);
-      setTransactions(prev => [...prev, newTransaction]);
+      const response = await transactionService.createTransaction(transaction);
+      setTransactions(prev => [...prev, response.transaction]);
       setError(null);
     } catch (err) {
       setError('Failed to create transaction');
@@ -105,3 +106,5 @@ export default function TransactionsPage() {
     </DashboardLayout>
   );
 }
+
+export default withAuth(TransactionsPage);

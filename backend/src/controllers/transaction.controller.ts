@@ -3,7 +3,7 @@ import { Transaction } from '../models/index.js';
 
 export const createTransaction: Controller = async (req, res, next) => {
   try {
-    const { type, category, amount, description, date } = req.body;
+    const { type, category, amount, description, date } = req.body.body;
 
     if (!req.user) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -52,6 +52,7 @@ export const getTransactions: Controller = async (req, res, next) => {
 export const updateTransaction: Controller = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { type, category, amount, description, date } = req.body.body;
 
     const transaction = await Transaction.findByPk(id);
 
@@ -59,7 +60,13 @@ export const updateTransaction: Controller = async (req, res, next) => {
       return res.status(404).json({ message: 'Transaction not found' });
     }
 
-    await transaction.update(req.body);
+    await transaction.update({
+      type,
+      category,
+      amount,
+      description,
+      date,
+    });
 
     res.status(200).json({
       message: 'Transaction updated successfully',
