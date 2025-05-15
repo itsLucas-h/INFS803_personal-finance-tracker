@@ -1,0 +1,85 @@
+import { TransactionData } from '@/components/transaction';
+
+const API_URL = 'http://localhost:5000/api/transactions';
+
+const getAuthToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
+};
+
+export const transactionService = {
+  async createTransaction(transaction: TransactionData) {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ body: transaction }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to create transaction');
+      }
+
+      const data = await response.json();
+      return data.transaction;
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      throw new Error('Network error: Please check if the backend server is running');
+    }
+  },
+
+  async getTransactions() {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to fetch transactions');
+      }
+
+      const data = await response.json();
+      return data.transactions;
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      throw new Error('Network error: Please check if the backend server is running');
+    }
+  },
+
+  async deleteTransaction(id: string) {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to delete transaction');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      throw new Error('Network error: Please check if the backend server is running');
+    }
+  }
+}; 
