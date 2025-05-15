@@ -13,7 +13,6 @@ export const transactionService = {
       const token = getAuthToken();
       if (!token) throw new Error('Not authenticated');
 
-      console.log('Sending request to:', `${API_URL}`);
       const response = await fetch(`${API_URL}`, {
         method: 'POST',
         headers: {
@@ -28,7 +27,8 @@ export const transactionService = {
         throw new Error(errorData?.message || 'Failed to create transaction');
       }
 
-      return response.json();
+      const data = await response.json();
+      return data.transaction;
     } catch (error) {
       console.error('Error creating transaction:', error);
       throw new Error('Network error: Please check if the backend server is running');
@@ -40,7 +40,6 @@ export const transactionService = {
       const token = getAuthToken();
       if (!token) throw new Error('Not authenticated');
 
-      console.log('Fetching from:', `${API_URL}`);
       const response = await fetch(`${API_URL}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -52,7 +51,8 @@ export const transactionService = {
         throw new Error(errorData?.message || 'Failed to fetch transactions');
       }
 
-      return response.json();
+      const data = await response.json();
+      return data.transactions;
     } catch (error) {
       console.error('Error fetching transactions:', error);
       throw new Error('Network error: Please check if the backend server is running');
@@ -64,7 +64,6 @@ export const transactionService = {
       const token = getAuthToken();
       if (!token) throw new Error('Not authenticated');
 
-      console.log('Deleting transaction:', `${API_URL}/${id}`);
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE',
         headers: {
@@ -77,7 +76,7 @@ export const transactionService = {
         throw new Error(errorData?.message || 'Failed to delete transaction');
       }
 
-      return response.json();
+      return true;
     } catch (error) {
       console.error('Error deleting transaction:', error);
       throw new Error('Network error: Please check if the backend server is running');
