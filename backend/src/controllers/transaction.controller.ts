@@ -11,9 +11,9 @@ export const createTransaction: Controller = async (req, res, next) => {
     }
 
     if (description && description.length > 100) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Description must be 100 characters or less',
-        field: 'description'
+        field: 'description',
       });
     }
 
@@ -68,9 +68,9 @@ export const updateTransaction: Controller = async (req, res, next) => {
     }
 
     if (description && description.length > 100) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Description must be 100 characters or less',
-        field: 'description'
+        field: 'description',
       });
     }
 
