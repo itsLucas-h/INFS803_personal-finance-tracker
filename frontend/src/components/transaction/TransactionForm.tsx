@@ -58,6 +58,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
+    } else if (formData.description.length > 100) {
+      newErrors.description = 'Description must be 100 characters or less';
     }
     
     if (!formData.category) {
@@ -151,9 +153,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       </div>
 
       <div className="mb-4">
-        <label htmlFor="description" className={STYLES.label}>
-          Description
-        </label>
+        <div className="flex justify-between items-center mb-1">
+          <label htmlFor="description" className={STYLES.label}>
+            Description
+          </label>
+          <span className="text-sm text-gray-500">
+            {formData.description.length}/100
+          </span>
+        </div>
         <input
           type="text"
           id="description"
@@ -163,6 +170,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           className={`${STYLES.input} ${errors.description ? 'border-red-500' : ''}`}
           required
           placeholder="Enter transaction description"
+          maxLength={100}
         />
         {errors.description && <p className={STYLES.error}>{errors.description}</p>}
       </div>
