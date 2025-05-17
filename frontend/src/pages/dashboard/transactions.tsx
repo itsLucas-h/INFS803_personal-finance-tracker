@@ -13,6 +13,7 @@ function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
@@ -47,6 +48,14 @@ function TransactionsPage() {
     }
   };
 
+  const handleEditStart = () => {
+    setIsEditing(true);
+  };
+
+  const handleEditEnd = () => {
+    setIsEditing(false);
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col items-center text-center space-y-4 mb-8">
@@ -62,7 +71,9 @@ function TransactionsPage() {
         </div>
       )}
 
-      <TransactionForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+      {!isEditing && (
+        <TransactionForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+      )}
 
       {loading ? (
         <div className="mt-8 text-center">Loading transactions...</div>
@@ -74,7 +85,9 @@ function TransactionsPage() {
         <div className="mt-8">
           <TransactionList 
             transactions={transactions} 
-            onTransactionUpdate={fetchTransactions} 
+            onTransactionUpdate={fetchTransactions}
+            onEditStart={handleEditStart}
+            onEditEnd={handleEditEnd}
           />
         </div>
       )}
