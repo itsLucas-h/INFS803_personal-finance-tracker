@@ -59,6 +59,33 @@ export const transactionService = {
     }
   },
 
+  async updateTransaction(id: string, transaction: TransactionData) {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ body: transaction }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to update transaction');
+      }
+
+      const data = await response.json();
+      return data.transaction;
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      throw new Error('Network error: Please check if the backend server is running');
+    }
+  },
+
   async deleteTransaction(id: string) {
     try {
       const token = getAuthToken();
