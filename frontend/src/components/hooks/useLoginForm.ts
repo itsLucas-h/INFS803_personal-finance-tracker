@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import axios, { AxiosError } from "axios";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+
 export const useLoginForm = () => {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
@@ -16,10 +19,10 @@ export const useLoginForm = () => {
     setError("");
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        form
-      );
+      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, form, {
+        withCredentials: true,
+      });
+
       localStorage.setItem("token", res.data.token);
       router.push("/dashboard");
     } catch (err: unknown) {
