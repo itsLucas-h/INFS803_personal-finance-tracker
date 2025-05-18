@@ -1,6 +1,7 @@
 import DashboardLayout from "@/layouts/DashboardLayout";
+import { withAuth } from "@/components/auth/withAuth";
 
-export default function DashboardHome() {
+function DashboardHome() {
   return (
     <DashboardLayout>
       <div className="flex flex-col items-center justify-center text-center">
@@ -14,3 +15,5 @@ export default function DashboardHome() {
     </DashboardLayout>
   );
 }
+
+export default withAuth(DashboardHome);
