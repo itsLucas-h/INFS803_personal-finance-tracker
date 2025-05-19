@@ -1,7 +1,7 @@
 import { TransactionData } from "@/components/transaction";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 const API_URL = `${API_BASE_URL}/api/transactions`;
 
 const getAuthToken = () => {

@@ -8,7 +8,7 @@ const router = Router();
 
 router.use(protect);
 
-router.post('/', validate(createGoalSchema), createGoal);
+router.post('/',validate(createGoalSchema), createGoal);
 router.get('/', getGoals);
 router.put('/:id', validate(updateGoalSchema), updateGoal);
 router.delete('/:id', deleteGoal);

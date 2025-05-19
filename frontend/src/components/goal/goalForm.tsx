@@ -2,10 +2,11 @@
 
 import React, { ChangeEvent, FormEvent,useEffect, useState } from 'react';
 
-type Goal = {
+export type Goal = {
+    id: string;
     title: string;
-    targetAmount: string;
-    currentAmount: string;
+    targetAmount: number;
+    currentAmount: number;
     deadline: string;
 };
 
@@ -16,10 +17,11 @@ type GoalFormProps = {
 };
 
 const defaultGoal: Goal = {
+    id: '',
     title: '',
-    targetAmount: '',
-    currentAmount: '',
-    deadline: ''
+    targetAmount: 0.0,
+    currentAmount: 0.0,
+    deadline: new Date().toISOString().split('T')[0],
 };
 
 const GoalForm: React.FC<GoalFormProps> = ({initialData = defaultGoal, onSubmit, isEditing = false}) => {
@@ -30,11 +32,22 @@ const GoalForm: React.FC<GoalFormProps> = ({initialData = defaultGoal, onSubmit,
     }, [initialData]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setGoal({...goal,[event.target.name]: event.target.value})
+      const { name, value } = event.target;
+       setGoal(prev => {
+      const newData = {
+        ...prev,
+        [name]: ['targetAmount', 'currentAmount'].includes(name) 
+        ? parseFloat(value) || 0.0 
+        : value
+      };
+
+      return newData;
+    });
     };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        console.log(goal);
         await onSubmit(goal);
     }
 
@@ -91,7 +104,7 @@ const GoalForm: React.FC<GoalFormProps> = ({initialData = defaultGoal, onSubmit,
                 className="goal-form-input text-gray-400"
                 value={goal.deadline}
                 onChange={handleChange}
-                required
+
                 />
                 <br />
             </div>
