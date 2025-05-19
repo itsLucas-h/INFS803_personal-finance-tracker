@@ -31,6 +31,25 @@ const GoalForm: React.FC<GoalFormProps> = ({initialData = defaultGoal, onSubmit,
         setGoal(initialData);
     }, [initialData]);
 
+    const validateInput = (): boolean => {
+
+        if(goal.currentAmount > goal.targetAmount)
+        {
+            console.error('Current amount must be less than target amount');
+            return false;
+        }
+
+        const selectedDate = new Date(goal.deadline);
+        const today = new Date();
+         if (selectedDate < today) {
+            console.error('Deadline can not be set in the past');
+            return false;
+    }
+
+    return true;
+
+    }
+
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       const { name, value } = event.target;
        setGoal(prev => {
@@ -47,8 +66,11 @@ const GoalForm: React.FC<GoalFormProps> = ({initialData = defaultGoal, onSubmit,
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if(validateInput())
+        {
         console.log(goal);
         await onSubmit(goal);
+        }
     }
 
     return (

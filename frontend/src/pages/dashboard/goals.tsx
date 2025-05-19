@@ -108,7 +108,7 @@ export default function GoalsPage() {
                 key={goal.id}
                 className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition"
               >
-                <h3 className="text-xl font-bold text-blue-700 mb-3">{goal.title}</h3>
+                <h3 className="text-xl font-bold text-black-700 mb-3">{goal.title}</h3>
                 <div className="text-gray-700 space-y-1 mb-3">
                   <p>
                     <span className="font-medium">Target:</span> ${goal.targetAmount}
