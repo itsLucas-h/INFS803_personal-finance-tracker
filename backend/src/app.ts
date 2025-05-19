@@ -16,11 +16,23 @@ dotenv.config();
 
 const app: Application = express();
 
-const allowedOrigins = ['http://localhost:3000', 'http://52.65.129.87:3000'];
+// Add your deployed frontend IP or domain here
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3000',
+  'http://3.27.192.56:3000', // replace with your EC2 IP if different
+];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`🚫 Blocked by CORS: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   }),
 );

@@ -3,7 +3,7 @@ import { Transaction } from '../models/index.js';
 
 export const createTransaction: Controller = async (req, res, next) => {
   try {
-    const { type, category, amount, description, date } = req.body.body;
+    const { type, category, amount, description, date } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -31,7 +31,7 @@ export const createTransaction: Controller = async (req, res, next) => {
       transaction,
     });
   } catch (error) {
-    console.error('❌ Error creating transaction:', error);
+    console.error('Error creating transaction:', error);
     next(error);
   }
 };
@@ -52,7 +52,7 @@ export const getTransactions: Controller = async (req, res, next) => {
       transactions,
     });
   } catch (error) {
-    console.error('❌ Error fetching transactions:', error);
+    console.error('Error fetching transactions:', error);
     next(error);
   }
 };
@@ -60,7 +60,7 @@ export const getTransactions: Controller = async (req, res, next) => {
 export const updateTransaction: Controller = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { type, category, amount, description, date } = req.body.body;
+    const { type, category, amount, description, date } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -93,7 +93,7 @@ export const updateTransaction: Controller = async (req, res, next) => {
       transaction,
     });
   } catch (error) {
-    console.error('❌ Error updating transaction:', error);
+    console.error('Error updating transaction:', error);
     next(error);
   }
 };
@@ -112,7 +112,7 @@ export const deleteTransaction: Controller = async (req, res, next) => {
 
     res.status(200).json({ message: 'Transaction deleted successfully' });
   } catch (error) {
-    console.error('❌ Error deleting transaction:', error);
+    console.error('Error deleting transaction:', error);
     next(error);
   }
 };
