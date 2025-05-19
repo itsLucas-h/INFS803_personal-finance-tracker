@@ -9,6 +9,7 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     fetchGoals();
@@ -17,6 +18,7 @@ export default function GoalsPage() {
   const fetchGoals = async () => {
     try{
       const fetchedGoals = await goalService.getGoals();
+      console.log("Fetched goals: ", fetchedGoals);
       setGoals(fetchedGoals || []);
       setError(null);
     } catch (err) {
@@ -43,9 +45,21 @@ export default function GoalsPage() {
 
   const handleGoalSubmit = async (goal: Goal) => {
     try{
-      const newGoal = await goalService.createGoal(goal);
-      setGoals(prev => [...prev, newGoal]);
+
+      if(editingGoal)
+      {
+        const updatedGoal = await goalService.updateGoal(goal.id, goal);
+        setGoals(prev => 
+          prev.map(g => (g.id === updatedGoal.id ? updatedGoal : g))
+        );
+      }
+      else{
+        const newGoal = await goalService.createGoal(goal);
+        setGoals(prev => [...prev, newGoal]);
+      }
+      
       setShowForm(false);
+      setEditingGoal(null);
       setError(null);
     } catch(err) {
       setError('Failed to create new goal');
@@ -109,7 +123,10 @@ export default function GoalsPage() {
                 <div className="flex justify-between mt-4">
                   <button
                     className="text-blue-600 hover:underline"
-                    onClick={() => console.log("Edit goal:", goal.title)}
+                    onClick={() => {
+                      setEditingGoal(goal);
+                      setShowForm(true);
+                    }}
                   >
                     Edit
                   </button>
@@ -134,8 +151,14 @@ export default function GoalsPage() {
               >
                 ×
               </button>
-              <h2 className="text-3xl font-semibold text-center py-10">New Goal</h2>
-              <GoalForm onSubmit={handleGoalSubmit} />
+              <h2 className="text-3xl font-semibold text-center py-10">
+                { editingGoal ? "Edit Goal" : "New Goal"}
+              </h2>
+              <GoalForm 
+              initialData={editingGoal || undefined}
+              isEditing={true}
+              onSubmit={handleGoalSubmit} 
+              />
             </div>
           </div>
         )}

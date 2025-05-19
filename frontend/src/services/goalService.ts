@@ -44,6 +44,7 @@ export const goalService = {
     async getGoals() {
         try{
             const response = await fetch(API_URL, {
+                method: "GET",
                 headers: getAuthHeaders(),
             });
 
@@ -53,7 +54,7 @@ export const goalService = {
             }
 
             const data = await response.json();
-            return data.goal;
+            return data.goals;
         } catch(error) {
             console.error("Error fetching goals: ", error);
             throw new Error("Could not fetch goals.");
@@ -79,11 +80,12 @@ export const goalService = {
         }
     },
 
-    async updateGoal(id: string) {
+    async updateGoal(id: string, updatedGoal : Goal) {
         try{
             const response = await fetch(`${API_URL}/${id}`, {
                 method: "PUT",
                 headers: getAuthHeaders(),
+                body: JSON.stringify(updatedGoal),
             });
 
             if(!response.ok) {
@@ -91,7 +93,9 @@ export const goalService = {
                 throw new Error(errorData?.message || "Failed to update savings goal");
             }
 
-            return true;
+            const data = await response.json();
+            return data.goal;
+            
         } catch(error) {
             console.error("Error delete goal: ", error);
             throw new Error("Could not update savings goal.");
