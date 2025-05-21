@@ -1,20 +1,4 @@
-// Define BudgetData and BudgetResponse inline for type safety
-interface BudgetData {
-  month: string;
-  amount: number;
-  category: string;
-  description?: string;
-}
-
-interface BudgetResponse {
-  id: string;
-  month: string;
-  amount: number;
-  category: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { BudgetData, BudgetResponse } from "@/components/budget";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 const API_URL = `${API_BASE_URL}/api/budgets`;

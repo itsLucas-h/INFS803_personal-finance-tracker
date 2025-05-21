@@ -55,7 +55,7 @@ function toDDMMMYYYY(dateString: string): string {
 
 export default function BudgetsPage() {
   const [formData, setFormData] = useState<BudgetData>({
-    month: new Date().toISOString().split('T')[0],
+    month: new Date().toISOString().slice(0, 7),
     amount: 0,
     category: '',
     description: '',
@@ -76,6 +76,42 @@ export default function BudgetsPage() {
   } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const getCurrentYear = () => new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => getCurrentYear() - 2 + i);
+
+  const months = [
+    { value: '01', label: 'January' },
+    { value: '02', label: 'February' },
+    { value: '03', label: 'March' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'May' },
+    { value: '06', label: 'June' },
+    { value: '07', label: 'July' },
+    { value: '08', label: 'August' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' },
+  ];
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const year = formData.month.split('-')[0];
+    const month = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      month: `${year}-${month}`
+    }));
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const year = e.target.value;
+    const month = formData.month.split('-')[1];
+    setFormData(prev => ({
+      ...prev,
+      month: `${year}-${month}`
+    }));
+  };
 
   useEffect(() => {
     fetchBudgets();
@@ -116,7 +152,7 @@ export default function BudgetsPage() {
       const newBudget = await budgetService.createBudget(formData);
       setBudgets([...budgets, newBudget]);
       setFormData({
-        month: new Date().toISOString().split('T')[0],
+        month: new Date().toISOString().slice(0, 7),
         amount: 0,
         category: '',
         description: '',
@@ -132,7 +168,9 @@ export default function BudgetsPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'amount' ? parseFloat(value) || 0 : value
+      [name]: name === 'amount' ? parseFloat(value) || 0 : 
+              name === 'month' ? value :
+              value
     }));
   };
 
@@ -266,16 +304,41 @@ export default function BudgetsPage() {
         </div>
 
         <div className="mb-6">
-          <label htmlFor="month" className={STYLES.label}>Date</label>
-          <input
-            type="month"
-            id="month"
-            name="month"
-            value={formData.month}
-            onChange={handleChange}
-            required
-            className={STYLES.input}
-          />
+          <label className={STYLES.label}>Month and Year</label>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <select
+                id="year"
+                name="year"
+                value={formData.month.split('-')[0]}
+                onChange={handleYearChange}
+                required
+                className={STYLES.input}
+              >
+                {years.map(year => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <select
+                id="month"
+                name="month"
+                value={formData.month.split('-')[1]}
+                onChange={handleMonthChange}
+                required
+                className={STYLES.input}
+              >
+                {months.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         <button type="submit" className={STYLES.button}>
