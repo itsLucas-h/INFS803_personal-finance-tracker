@@ -34,18 +34,26 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   isEditing = false 
 }) => {
   const [formData, setFormData] = useState<TransactionData>({
-    amount: 0,
-    description: '',
-    category: '',
-    date: new Date().toISOString().split('T')[0],
-    type: 'expense'
+    amount: initialData?.amount || 0,
+    description: initialData?.description || '',
+    category: initialData?.category || '',
+    date: initialData?.date || new Date().toISOString().split('T')[0],
+    type: initialData?.type || 'expense'
   });
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+    } else if (!isEditing) {
+      setFormData({
+        amount: 0,
+        description: '',
+        category: '',
+        date: new Date().toISOString().split('T')[0],
+        type: 'expense'
+      });
     }
-  }, [initialData]);
+  }, [initialData, isEditing]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof TransactionData, string>>>({});
 
