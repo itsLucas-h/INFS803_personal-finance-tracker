@@ -1,7 +1,9 @@
 import { TransactionData } from "@/components/transaction";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+if (!API_BASE_URL) throw new Error('NEXT_PUBLIC_API_BASE_URL is not set');
+
 const API_URL = `${API_BASE_URL}/api/transactions`;
 
 const getAuthToken = () => {
@@ -57,6 +59,33 @@ export const transactionService = {
     } catch (error) {
       console.error("Error fetching transactions:", error);
       throw new Error("Could not fetch transactions. Please try again later.");
+    }
+  },
+
+  async updateTransaction(id: string, transaction: TransactionData) {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(transaction),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to update transaction');
+      }
+
+      const data = await response.json();
+      return data.transaction;
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      throw new Error('Could not update transaction. Please try again later.');
     }
   },
 

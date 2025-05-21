@@ -1,19 +1,185 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from "@/layouts/DashboardLayout";
-import { TransactionForm, TransactionData } from '@/components/transaction';
 import { transactionService } from '@/services/transactionService';
+
+interface TransactionData {
+  amount: number;
+  description: string;
+  category: string;
+  date: string;
+  type: 'income' | 'expense';
+}
 
 interface Transaction extends TransactionData {
   id: string;
   createdAt: string;
 }
 
-function TransactionsPage() {
+const STYLES = {
+  input: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400",
+  label: "block text-sm font-medium text-gray-700 mb-1",
+  button: "w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+  deleteButton: "text-red-600 hover:text-red-800 transition-colors p-2 rounded-full hover:bg-red-50"
+} as const;
+
+const CATEGORIES = [
+  'Food',
+  'Rent',
+  'Transport',
+  'Health',
+  'Entertainment',
+  'Utilities',
+  'Savings',
+  'Salary',
+  'Freelance',
+  'Investments',
+  'Gifts',
+  'Other',
+];
+
+const getTransactionData = (entry?: Transaction): TransactionData => ({
+  amount: entry?.amount || 0,
+  description: entry?.description || '',
+  category: entry?.category || '',
+  date: entry?.date || new Date().toISOString().split('T')[0],
+  type: entry?.type || 'expense',
+});
+
+const TransactionForm: React.FC<{
+  onSubmit: (transaction: TransactionData) => void;
+  isLoading?: boolean;
+  initialData?: TransactionData;
+  isEditing?: boolean;
+}> = ({ onSubmit, isLoading = false, initialData, isEditing = false }) => {
+  const [formData, setFormData] = useState<TransactionData>(getTransactionData(initialData));
+  const [errors, setErrors] = useState<Partial<Record<keyof TransactionData, string>>>({});
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else if (!isEditing) {
+      setFormData(getTransactionData());
+    }
+  }, [initialData, isEditing]);
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof TransactionData, string>> = {};
+    if (formData.amount <= 0) newErrors.amount = 'Amount must be greater than 0';
+    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.date) newErrors.date = 'Date is required';
+    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      onSubmit(formData);
+      if (!isEditing) {
+        setFormData(getTransactionData());
+      }
+      setErrors({});
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'amount' ? parseFloat(value) || 0 : value,
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm mb-8">
+      <div className="mb-4">
+        <label htmlFor="type" className={STYLES.label}>Transaction Type</label>
+        <select
+          id="type"
+          name="type"
+          value={formData.type}
+          onChange={handleChange}
+          className={STYLES.input}
+          required
+        >
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+      </div>
+      <div className="mb-4">
+        <label htmlFor="amount" className={STYLES.label}>Amount</label>
+        <input
+          type="number"
+          id="amount"
+          name="amount"
+          value={formData.amount}
+          onChange={handleChange}
+          className={STYLES.input}
+          required
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+        />
+        {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
+      </div>
+      <div className="mb-4">
+        <label htmlFor="description" className={STYLES.label}>Description</label>
+        <input
+          type="text"
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          className={STYLES.input}
+          placeholder="Enter transaction description"
+        />
+        {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+      </div>
+      <div className="mb-4">
+        <label htmlFor="category" className={STYLES.label}>Category</label>
+        <select
+          id="category"
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          className={STYLES.input}
+          required
+        >
+          <option value="">Select a category</option>
+          {CATEGORIES.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
+      </div>
+      <div className="mb-6">
+        <label htmlFor="date" className={STYLES.label}>Date</label>
+        <input
+          type="date"
+          id="date"
+          name="date"
+          value={formData.date}
+          onChange={handleChange}
+          className={STYLES.input}
+          required
+        />
+        {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
+      </div>
+      <button type="submit" className={STYLES.button} disabled={isLoading}>
+        {isLoading ? 'Saving...' : isEditing ? 'Update Transaction' : 'Add Transaction'}
+      </button>
+    </form>
+  );
+};
+
+export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
@@ -48,21 +214,38 @@ function TransactionsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this transaction?')) {
-      return;
-    }
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsEditing(true);
+  };
 
+  const handleEditCancel = () => {
+    setEditingTransaction(null);
+    setIsEditing(false);
+  };
+
+  const handleUpdate = async (updatedTransaction: TransactionData) => {
+    if (!editingTransaction) return;
     try {
-      setDeletingId(id);
-      await transactionService.deleteTransaction(id);
-      setTransactions(prev => prev.filter(t => t.id !== id));
-      setError(null);
+      await transactionService.updateTransaction(editingTransaction.id, updatedTransaction);
+      setTransactions(transactions.map(t => t.id === editingTransaction.id ? { ...t, ...updatedTransaction } : t));
+      setEditingTransaction(null);
+      setIsEditing(false);
     } catch (err) {
-      setError('Failed to delete transaction');
-      console.error('Error deleting transaction:', err);
-    } finally {
-      setDeletingId(null);
+      setError('Failed to update transaction');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this transaction?')) {
+      try {
+        await transactionService.deleteTransaction(id);
+        setTransactions(transactions.filter(t => t.id !== id));
+        setError(null);
+      } catch (err) {
+        setError('Failed to delete transaction');
+        console.error('Error deleting transaction:', err);
+      }
     }
   };
 
@@ -81,7 +264,33 @@ function TransactionsPage() {
         </div>
       )}
 
-      <TransactionForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+      {!isEditing && (
+        <TransactionForm
+          onSubmit={handleSubmit}
+          isLoading={isSubmitting}
+        />
+      )}
+
+      {isEditing && editingTransaction && (
+        <div className="mb-6 relative max-w-md mx-auto">
+          <button
+            onClick={handleEditCancel}
+            className="absolute -top-2 -right-2 text-red-600 hover:text-red-800 focus:outline-none"
+            aria-label="Cancel editing"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <h2 className="text-xl font-semibold mb-4 text-gray-600">Edit Transaction</h2>
+          <TransactionForm
+            onSubmit={handleUpdate}
+            isLoading={false}
+            initialData={getTransactionData(editingTransaction)}
+            isEditing={true}
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="mt-8 text-center">Loading transactions...</div>
@@ -90,41 +299,40 @@ function TransactionsPage() {
           No transactions found. Add your first transaction above.
         </div>
       ) : (
-        <div className="mt-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Recent Transactions</h2>
-          <div className="space-y-4">
-            {transactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="bg-white p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 flex justify-between items-center border border-gray-100"
-              >
-                <div className="space-y-1">
-                  <p className="font-medium text-gray-800">{transaction.description}</p>
-                  <p className="text-sm text-gray-600">
-                    {new Date(transaction.date).toLocaleDateString()} • {transaction.category}
-                  </p>
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-xl font-semibold mb-6 text-gray-800">Transactions</h2>
+          <div className="space-y-6">
+            {transactions.map((entry) => (
+              <div key={entry.id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <span className="font-medium text-gray-800">{entry.category}</span>
+                    <span className="ml-2 text-gray-500 text-sm">{entry.type === 'income' ? 'Income' : 'Expense'}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => handleEdit(entry)}
+                      className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed mr-2 px-3 py-1 text-sm"
+                      disabled={isEditing}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(entry.id)}
+                      className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-full hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <span className={`font-medium whitespace-nowrap ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                    {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                  </span>
-                  <button
-                    onClick={() => handleDelete(transaction.id)}
-                    className="text-gray-400 hover:text-red-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={deletingId === transaction.id}
-                    aria-label="Delete transaction"
-                  >
-                    {deletingId === transaction.id ? (
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-gray-800">{entry.description}</div>
+                    <div className="text-gray-500 text-sm">{new Date(entry.date).toLocaleDateString()}</div>
+                  </div>
+                  <div className={`font-medium text-lg ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    {entry.type === 'income' ? '+' : '-'}${entry.amount.toFixed(2)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -134,5 +342,3 @@ function TransactionsPage() {
     </DashboardLayout>
   );
 }
-
-export default TransactionsPage;
