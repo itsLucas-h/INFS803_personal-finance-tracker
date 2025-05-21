@@ -71,7 +71,7 @@ export const transactionService = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ body: transaction }),
+        body: JSON.stringify(transaction),
       });
 
       if (!response.ok) {
@@ -83,7 +83,7 @@ export const transactionService = {
       return data.transaction;
     } catch (error) {
       console.error('Error updating transaction:', error);
-      throw new Error('Network error: Please check if the backend server is running');
+      throw new Error('Could not update transaction. Please try again later.');
     }
   },
 
