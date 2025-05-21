@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface TransactionFormProps {
   onSubmit: (transaction: TransactionData) => void;
   isLoading?: boolean;
+  initialData?: TransactionData;
+  isEditing?: boolean;
 }
 
 export interface TransactionData {
@@ -25,7 +27,12 @@ const STYLES = {
   button: "w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 } as const;
 
-export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLoading = false }) => {
+export const TransactionForm: React.FC<TransactionFormProps> = ({ 
+  onSubmit, 
+  isLoading = false, 
+  initialData,
+  isEditing = false 
+}) => {
   const [formData, setFormData] = useState<TransactionData>({
     amount: 0,
     description: '',
@@ -33,6 +40,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
     date: new Date().toISOString().split('T')[0],
     type: 'expense'
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof TransactionData, string>>>({});
 
@@ -45,6 +58,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
     
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
+    } else if (formData.description.length > 100) {
+      newErrors.description = 'Description must be 100 characters or less';
     }
     
     if (!formData.category) {
@@ -65,13 +80,15 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
     e.preventDefault();
     if (validateForm()) {
       onSubmit(formData);
-      setFormData({
-        amount: 0,
-        description: '',
-        category: '',
-        date: new Date().toISOString().split('T')[0],
-        type: 'expense'
-      });
+      if (!isEditing) {
+        setFormData({
+          amount: 0,
+          description: '',
+          category: '',
+          date: new Date().toISOString().split('T')[0],
+          type: 'expense'
+        });
+      }
       setErrors({});
     }
   };
@@ -136,9 +153,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
       </div>
 
       <div className="mb-4">
-        <label htmlFor="description" className={STYLES.label}>
-          Description
-        </label>
+        <div className="flex justify-between items-center mb-1">
+          <label htmlFor="description" className={STYLES.label}>
+            Description
+          </label>
+          <span className="text-sm text-gray-500">
+            {formData.description.length}/100
+          </span>
+        </div>
         <input
           type="text"
           id="description"
@@ -148,6 +170,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
           className={`${STYLES.input} ${errors.description ? 'border-red-500' : ''}`}
           required
           placeholder="Enter transaction description"
+          maxLength={100}
         />
         {errors.description && <p className={STYLES.error}>{errors.description}</p>}
       </div>
@@ -196,7 +219,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
         className={STYLES.button}
         disabled={isLoading}
       >
-        {isLoading ? 'Adding...' : 'Add Transaction'}
+        {isLoading ? 'Saving...' : isEditing ? 'Update Transaction' : 'Add Transaction'}
       </button>
     </form>
   );
