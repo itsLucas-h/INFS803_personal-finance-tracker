@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 const API_URL = `${API_BASE_URL}/api/budgets`;
 
@@ -20,19 +18,32 @@ interface BudgetResponse {
   updatedAt: string;
 }
 
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
+};
+
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
+  if (!token) throw new Error("Not authenticated");
   return {
     "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : "",
+    Authorization: `Bearer ${token}`,
   };
 };
 
 export const budgetService = {
   async getBudgets(): Promise<BudgetResponse[]> {
     try {
-      const response = await axios.get<{ budgets: BudgetResponse[] }>(API_URL, { headers: getAuthHeaders() });
-      return response.data.budgets;
+      const response = await fetch(API_URL, {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to fetch budgets");
+      }
+      const data = await response.json();
+      return data.budgets;
     } catch (error) {
       console.error('Error fetching budgets:', error);
       throw error;
@@ -41,8 +52,17 @@ export const budgetService = {
 
   async createBudget(budgetData: BudgetData): Promise<BudgetResponse> {
     try {
-      const response = await axios.post<{ budget: BudgetResponse }>(API_URL, budgetData, { headers: getAuthHeaders() });
-      return response.data.budget;
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(budgetData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to create budget");
+      }
+      const data = await response.json();
+      return data.budget;
     } catch (error) {
       console.error('Error creating budget:', error);
       throw error;
@@ -51,7 +71,15 @@ export const budgetService = {
 
   async deleteBudget(id: string): Promise<void> {
     try {
-      await axios.delete(`${API_URL}/${id}`, { headers: getAuthHeaders() });
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to delete budget");
+      }
+      return;
     } catch (error) {
       console.error('Error deleting budget:', error);
       throw error;

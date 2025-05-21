@@ -41,12 +41,25 @@ const getAuthHeaders = () => {
   };
 };
 
+function toDDMMMYYYY(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (!isNaN(date.getTime())) {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('default', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+  return dateString;
+}
+
 export default function BudgetsPage() {
-  const [month, setMonth] = useState('');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
-  const [description, setDescription] = useState('');
+  const [formData, setFormData] = useState<BudgetData>({
+    month: new Date().toISOString().split('T')[0],
+    amount: 0,
+    category: '',
+    description: '',
+  });
   const [categories, setCategories] = useState<string[]>([
     'Food',
     'Rent',
@@ -83,52 +96,44 @@ export default function BudgetsPage() {
     e.preventDefault();
     setFormError(null);
 
-    const chosenCategory = customCategory.trim() !== '' ? customCategory : category;
-
-    if (!chosenCategory) {
-      setFormError("Please select or add a category.");
+    if (!formData.category) {
+      setFormError("Please select a category.");
       return;
     }
-
-    if (parseFloat(amount) <= 0) {
+    if (formData.amount <= 0) {
       setFormError("Amount must be greater than 0.");
       return;
     }
-
-    if (customCategory && !categories.includes(customCategory)) {
-      setCategories(prev => {
-        const newCategories = [...prev, customCategory];
-        localStorage.setItem('categories', JSON.stringify(newCategories));
-        return newCategories;
-      });
-    }
-
+    // Check for duplicate
     const exists = budgets.find(
-      (b) => b.month === month && b.category === chosenCategory
+      (b) => b.month === formData.month && b.category === formData.category
     );
     if (exists) {
-      setFormError(`A budget for "${chosenCategory}" in ${formatMonth(month)} already exists.`);
+      setFormError(`A budget for "${formData.category}" in ${formData.month} already exists.`);
       return;
     }
-
     try {
-      const newBudget = await budgetService.createBudget({
-        month,
-        amount: Math.floor(parseFloat(amount)),
-        category: chosenCategory,
-        description: description.trim() || undefined,
-      });
+      const newBudget = await budgetService.createBudget(formData);
       setBudgets([...budgets, newBudget]);
-      setMonth('');
-      setAmount('');
-      setCategory('');
-      setCustomCategory('');
-      setDescription('');
+      setFormData({
+        month: new Date().toISOString().split('T')[0],
+        amount: 0,
+        category: '',
+        description: '',
+      });
       setError(null);
     } catch (err) {
       setError('Failed to create budget');
       console.error('Error creating budget:', err);
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'amount' ? parseFloat(value) || 0 : value
+    }));
   };
 
   const handleDelete = async (id: string) => {
@@ -212,8 +217,9 @@ export default function BudgetsPage() {
           <label htmlFor="category" className={STYLES.label}>Select Category</label>
           <select
             id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
             className={STYLES.input}
           >
             <option value="">-- Choose a category --</option>
@@ -226,18 +232,6 @@ export default function BudgetsPage() {
         </div>
 
         <div className="mb-4">
-          <label htmlFor="customCategory" className={STYLES.label}>Or Add New Category</label>
-          <input
-            type="text"
-            id="customCategory"
-            value={customCategory}
-            onChange={(e) => setCustomCategory(e.target.value)}
-            placeholder="Enter custom category"
-            className={STYLES.input}
-          />
-        </div>
-
-        <div className="mb-4">
           <label htmlFor="amount" className={STYLES.label}>Target Amount</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -246,10 +240,11 @@ export default function BudgetsPage() {
             <input
               type="number"
               id="amount"
+              name="amount"
               min="0"
               step="1"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              value={formData.amount}
+              onChange={handleChange}
               required
               className={`${STYLES.input} pl-7`}
               placeholder="0"
@@ -262,20 +257,22 @@ export default function BudgetsPage() {
           <input
             type="text"
             id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
             placeholder="Enter budget description (optional)"
             className={STYLES.input}
           />
         </div>
 
         <div className="mb-6">
-          <label htmlFor="month" className={STYLES.label}>Month</label>
+          <label htmlFor="month" className={STYLES.label}>Date</label>
           <input
-            type="month"
+            type="date"
             id="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
+            name="month"
+            value={formData.month}
+            onChange={handleChange}
             required
             className={STYLES.input}
           />
