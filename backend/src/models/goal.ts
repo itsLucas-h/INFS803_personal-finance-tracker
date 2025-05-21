@@ -1,7 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db.js';
 
-
 interface GoalAttributes {
   id: number;
   userId: number;

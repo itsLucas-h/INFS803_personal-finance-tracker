@@ -8,7 +8,7 @@ export const createGoal: Controller = async (req, res, next) => {
     if (!req.user?.id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
+
     const goal = await Goal.create({
       userId: req.user?.id,
       title,
@@ -17,10 +17,10 @@ export const createGoal: Controller = async (req, res, next) => {
       deadline,
     });
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Goal created successfully',
-       goal 
-      });
+      goal,
+    });
   } catch (err) {
     console.error('Error creating goal:', err);
     next(err);
@@ -29,7 +29,7 @@ export const createGoal: Controller = async (req, res, next) => {
 
 export const getGoals: Controller = async (req, res, next) => {
   try {
-    if (!req.user){
+    if (!req.user) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -39,10 +39,10 @@ export const getGoals: Controller = async (req, res, next) => {
 
     console.log('Goals fetched successfully');
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'Goals fetched successfully',
-       goals
-       });
+      goals,
+    });
   } catch (err) {
     console.error('Error fetching goals:', err);
     next(err);
@@ -57,7 +57,8 @@ export const updateGoal: Controller = async (req, res, next) => {
 
     if (!goal || goal.userId !== req.user?.id) {
       return res.status(404).json({
-         message: 'Goal not found' });
+        message: 'Goal not found',
+      });
     }
 
     await goal.update(req.body);
