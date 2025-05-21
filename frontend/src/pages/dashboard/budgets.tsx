@@ -268,7 +268,7 @@ export default function BudgetsPage() {
         <div className="mb-6">
           <label htmlFor="month" className={STYLES.label}>Date</label>
           <input
-            type="date"
+            type="month"
             id="month"
             name="month"
             value={formData.month}
