@@ -53,6 +53,143 @@ function toDDMMMYYYY(dateString: string): string {
   return dateString;
 }
 
+// Pass categories as a prop to BudgetForm and ensure category is always a string
+const getBudgetData = (entry?: BudgetEntry): BudgetData => ({
+  month: entry?.month || new Date().toISOString().slice(0, 7),
+  amount: entry?.amount || 0,
+  category: entry?.category || '',
+  description: entry?.description || '',
+});
+
+// Inline BudgetForm component
+const BudgetForm: React.FC<{
+  onSubmit: (budget: BudgetData) => void;
+  isLoading?: boolean;
+  initialData?: BudgetData;
+  isEditing?: boolean;
+  categories: string[];
+}> = ({ onSubmit, isLoading = false, initialData, isEditing = false, categories }) => {
+  const [formData, setFormData] = useState<BudgetData>({
+    month: initialData?.month || new Date().toISOString().slice(0, 7),
+    amount: initialData?.amount || 0,
+    category: initialData?.category || '',
+    description: initialData?.description || '',
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof BudgetData, string>>>({});
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else if (!isEditing) {
+      setFormData({
+        month: new Date().toISOString().slice(0, 7),
+        amount: 0,
+        category: '',
+        description: '',
+      });
+    }
+  }, [initialData, isEditing]);
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof BudgetData, string>> = {};
+    if (formData.amount <= 0) newErrors.amount = 'Amount must be greater than 0';
+    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.month) newErrors.month = 'Month is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      onSubmit(formData);
+      if (!isEditing) {
+        setFormData({
+          month: new Date().toISOString().slice(0, 7),
+          amount: 0,
+          category: '',
+          description: '',
+        });
+      }
+      setErrors({});
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'amount' ? parseFloat(value) || 0 : value,
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm mb-8">
+      <div className="mb-4">
+        <label htmlFor="category" className={STYLES.label}>Category</label>
+        <select
+          id="category"
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          className={STYLES.input}
+          required
+        >
+          <option value="">Select a category</option>
+          {categories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
+      </div>
+      <div className="mb-4">
+        <label htmlFor="amount" className={STYLES.label}>Amount</label>
+        <input
+          type="number"
+          id="amount"
+          name="amount"
+          value={formData.amount}
+          onChange={handleChange}
+          className={STYLES.input}
+          required
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+        />
+        {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
+      </div>
+      <div className="mb-4">
+        <label htmlFor="description" className={STYLES.label}>Description</label>
+        <input
+          type="text"
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          className={STYLES.input}
+          placeholder="Enter budget description (optional)"
+        />
+      </div>
+      <div className="mb-6">
+        <label htmlFor="month" className={STYLES.label}>Month</label>
+        <input
+          type="month"
+          id="month"
+          name="month"
+          value={formData.month}
+          onChange={handleChange}
+          className={STYLES.input}
+          required
+        />
+        {errors.month && <p className="mt-1 text-sm text-red-600">{errors.month}</p>}
+      </div>
+      <button type="submit" className={STYLES.button} disabled={isLoading}>
+        {isLoading ? 'Saving...' : isEditing ? 'Update Budget' : 'Add Budget'}
+      </button>
+    </form>
+  );
+};
+
 export default function BudgetsPage() {
   const [formData, setFormData] = useState<BudgetData>({
     month: new Date().toISOString().slice(0, 7),
@@ -73,6 +210,8 @@ export default function BudgetsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBudget, setEditingBudget] = useState<BudgetEntry | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const getCurrentYear = () => new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => getCurrentYear() - 2 + i);
@@ -186,23 +325,25 @@ export default function BudgetsPage() {
   };
 
   const handleEdit = (budget: BudgetEntry) => {
-    setFormData({
-      month: budget.month,
-      amount: budget.amount,
-      category: budget.category || '',
-      description: budget.description || '',
-    });
-    setEditingId(budget.id);
+    setEditingBudget(budget);
+    setIsEditing(true);
   };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setFormData({
-      month: new Date().toISOString().slice(0, 7),
-      amount: 0,
-      category: '',
-      description: '',
-    });
+  const handleEditCancel = () => {
+    setEditingBudget(null);
+    setIsEditing(false);
+  };
+
+  const handleUpdate = async (updatedBudget: BudgetData) => {
+    if (!editingBudget) return;
+    try {
+      await budgetService.updateBudget(editingBudget.id, updatedBudget);
+      setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...b, ...updatedBudget } : b));
+      setEditingBudget(null);
+      setIsEditing(false);
+    } catch (err) {
+      setError('Failed to update budget');
+    }
   };
 
   // Group budgets by month
@@ -227,107 +368,37 @@ export default function BudgetsPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm mb-8">
-        {formError && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
-            {formError}
-          </div>
-        )}
+      {!isEditing && (
+        <BudgetForm
+          onSubmit={handleSubmit as any}
+          isLoading={false}
+          initialData={getBudgetData()}
+          isEditing={false}
+          categories={categories}
+        />
+      )}
 
-        <div className="mb-4">
-          <label htmlFor="category" className={STYLES.label}>Select Category</label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className={STYLES.input}
+      {isEditing && editingBudget && (
+        <div className="mb-6 relative max-w-md mx-auto">
+          <button
+            onClick={handleEditCancel}
+            className="absolute -top-2 -right-2 text-red-600 hover:text-red-800 focus:outline-none"
+            aria-label="Cancel editing"
           >
-            <option value="">-- Choose a category --</option>
-            {categories.map((cat, idx) => (
-              <option key={idx} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="amount" className={STYLES.label}>Target Amount</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">$</span>
-            </div>
-            <input
-              type="number"
-              id="amount"
-              name="amount"
-              min="0"
-              step="1"
-              value={formData.amount}
-              onChange={handleChange}
-              required
-              className={`${STYLES.input} pl-7`}
-              placeholder="0"
-            />
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="description" className={STYLES.label}>Description</label>
-          <input
-            type="text"
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Enter budget description (optional)"
-            className={STYLES.input}
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <h2 className="text-xl font-semibold mb-4 text-gray-600">Edit Budget</h2>
+          <BudgetForm
+            onSubmit={handleUpdate}
+            isLoading={false}
+            initialData={getBudgetData(editingBudget)}
+            isEditing={true}
+            categories={categories}
           />
         </div>
-
-        <div className="mb-6">
-          <label className={STYLES.label}>Month and Year</label>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <select
-                id="year"
-                name="year"
-                value={formData.month.split('-')[0]}
-                onChange={handleYearChange}
-                required
-                className={STYLES.input}
-              >
-                {years.map(year => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <select
-                id="month"
-                name="month"
-                value={formData.month.split('-')[1]}
-                onChange={handleMonthChange}
-                required
-                className={STYLES.input}
-              >
-                {months.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <button type="submit" className={STYLES.button}>
-          Add Budget
-        </button>
-      </form>
+      )}
 
       <div className="max-w-2xl mx-auto">
         <h2 className="text-xl font-semibold mb-6 text-gray-800">Budgets by Month</h2>
@@ -370,8 +441,8 @@ export default function BudgetsPage() {
                             <div className="flex items-center">
                               <button
                                 onClick={() => handleEdit(entry)}
-                                className={`${STYLES.button} mr-2 px-3 py-1 text-sm`}
-                                title="Edit budget entry"
+                                className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed mr-2"
+                                disabled={isEditing}
                               >
                                 Edit
                               </button>
