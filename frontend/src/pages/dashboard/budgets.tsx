@@ -70,12 +70,9 @@ export default function BudgetsPage() {
     'Savings',
   ]);
   const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof BudgetEntry;
-    direction: 'asc' | 'desc';
-  } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const getCurrentYear = () => new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => getCurrentYear() - 2 + i);
@@ -140,17 +137,18 @@ export default function BudgetsPage() {
       setFormError("Amount must be greater than 0.");
       return;
     }
-    // Check for duplicate
-    const exists = budgets.find(
-      (b) => b.month === formData.month && b.category === formData.category
-    );
-    if (exists) {
-      setFormError(`A budget for "${formData.category}" in ${formData.month} already exists.`);
-      return;
-    }
+
     try {
-      const newBudget = await budgetService.createBudget(formData);
-      setBudgets([...budgets, newBudget]);
+      if (editingId) {
+        // Edit mode
+        const updatedBudget = await budgetService.updateBudget(editingId, formData);
+        setBudgets(budgets.map(b => b.id === editingId ? updatedBudget : b));
+        setEditingId(null);
+      } else {
+        // Create mode
+        const newBudget = await budgetService.createBudget(formData);
+        setBudgets([...budgets, newBudget]);
+      }
       setFormData({
         month: new Date().toISOString().slice(0, 7),
         amount: 0,
@@ -159,8 +157,8 @@ export default function BudgetsPage() {
       });
       setError(null);
     } catch (err) {
-      setError('Failed to create budget');
-      console.error('Error creating budget:', err);
+      setError('Failed to save budget');
+      console.error('Error saving budget:', err);
     }
   };
 
@@ -187,47 +185,32 @@ export default function BudgetsPage() {
     }
   };
 
-  const groupBudgetsByMonth = () => {
-    const grouped: { [month: string]: BudgetEntry[] } = {};
-    const sortedBudgets = [...budgets];
-
-    if (sortConfig) {
-      sortedBudgets.sort((a, b) => {
-        const aValue = a[sortConfig.key] ?? '';
-        const bValue = b[sortConfig.key] ?? '';
-
-        if (aValue < bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-
-    sortedBudgets.forEach((entry) => {
-      if (!grouped[entry.month]) {
-        grouped[entry.month] = [];
-      }
-      grouped[entry.month].push(entry);
+  const handleEdit = (budget: BudgetEntry) => {
+    setFormData({
+      month: budget.month,
+      amount: budget.amount,
+      category: budget.category || '',
+      description: budget.description || '',
     });
-    return grouped;
+    setEditingId(budget.id);
   };
 
-  const handleSort = (key: keyof BudgetEntry) => {
-    setSortConfig(current => ({
-      key,
-      direction: current?.key === key && current.direction === 'asc' ? 'desc' : 'asc'
-    }));
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      month: new Date().toISOString().slice(0, 7),
+      amount: 0,
+      category: '',
+      description: '',
+    });
   };
 
-  const getSortIcon = (key: keyof BudgetEntry) => {
-    if (sortConfig?.key !== key) return '↕️';
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
-  };
-
-  const groupedBudgets = groupBudgetsByMonth();
+  // Group budgets by month
+  const groupedBudgets = budgets.reduce((acc, budget) => {
+    if (!acc[budget.month]) acc[budget.month] = [];
+    acc[budget.month].push(budget);
+    return acc;
+  }, {} as Record<string, BudgetEntry[]>);
 
   return (
     <DashboardLayout>
@@ -346,55 +329,52 @@ export default function BudgetsPage() {
         </button>
       </form>
 
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <h2 className="text-xl font-semibold mb-6 text-gray-800">Budgets by Month</h2>
-        {Object.keys(groupedBudgets).length === 0 ? (
+        {budgets.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             No budgets added yet. Add your first budget above.
           </div>
         ) : (
           <div className="space-y-6">
-            {Object.entries(groupedBudgets).map(([month, entries]) => {
-              const total = entries.reduce((sum, e) => sum + e.amount, 0);
-              return (
-                <div key={month} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-bold mb-4 text-gray-800">{formatMonth(month)}</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th 
-                            className="px-4 py-3 text-left text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('category')}
-                          >
-                            Category {getSortIcon('category')}
-                          </th>
-                          <th 
-                            className="px-4 py-3 text-right text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('amount')}
-                          >
-                            Amount {getSortIcon('amount')}
-                          </th>
-                          <th 
-                            className="px-4 py-3 text-left text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('description')}
-                          >
-                            Description {getSortIcon('description')}
-                          </th>
-                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {entries.map((entry) => (
-                          <tr key={entry.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-800">
-                              {entry.category}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-right text-gray-800">${entry.amount.toFixed(2)}</td>
-                            <td className="px-4 py-3 text-sm text-gray-800">{entry.description || '-'}</td>
-                            <td className="px-4 py-3 text-sm text-center">
+            {Object.entries(groupedBudgets).map(([month, monthBudgets]) => (
+              <div key={month} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-bold mb-4 text-gray-800">{formatMonth(month)}</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                          Category
+                        </th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">
+                          Amount
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                          Description
+                        </th>
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {monthBudgets.map((entry) => (
+                        <tr key={entry.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-800">
+                            {entry.category}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right text-gray-800">${entry.amount.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-sm text-gray-800">{entry.description || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-center">
+                            <div className="flex items-center">
+                              <button
+                                onClick={() => handleEdit(entry)}
+                                className={`${STYLES.button} mr-2 px-3 py-1 text-sm`}
+                                title="Edit budget entry"
+                              >
+                                Edit
+                              </button>
                               <button
                                 onClick={() => handleDelete(entry.id)}
                                 className={STYLES.deleteButton}
@@ -404,21 +384,15 @@ export default function BudgetsPage() {
                                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
                               </button>
-                            </td>
-                          </tr>
-                        ))}
-                        <tr className="bg-gray-50 font-medium">
-                          <td className="px-4 py-3 text-sm text-gray-800">Total</td>
-                          <td className="px-4 py-3 text-sm text-right text-gray-800">${total.toFixed(2)}</td>
-                          <td></td>
-                          <td></td>
+                            </div>
+                          </td>
                         </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>

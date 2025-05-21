@@ -76,4 +76,23 @@ export const budgetService = {
       throw new Error("Could not delete budget. Please try again later.");
     }
   },
+
+  async updateBudget(id: string, budget: BudgetData) {
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(budget),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to update budget");
+      }
+      const data = await response.json();
+      return data.budget;
+    } catch (error) {
+      console.error("Error updating budget:", error);
+      throw new Error("Could not update budget. Please try again later.");
+    }
+  },
 }; 
