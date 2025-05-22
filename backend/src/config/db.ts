@@ -9,7 +9,7 @@ if (!isTestEnv) {
   const requiredEnvVars = ['DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST'];
   requiredEnvVars.forEach((key) => {
     if (!process.env[key]) {
-      throw new Error(`Missing required environment variables: ${key}`);
+      throw new Error(`Missing required environment variable: ${key}`);
     }
   });
 }
@@ -28,6 +28,12 @@ const dbConfig = {
       },
     },
     logging: false,
+    pool: {
+      max: 10,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
   },
 };
 
@@ -38,12 +44,22 @@ export const sequelize = new Sequelize(
   dbConfig.options,
 );
 
-export const testConnection = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log(`PostgreSQL connected successfully!`);
-  } catch (err: any) {
-    console.error(`DB connection error:`, err.message || err);
-    process.exit(1);
+export const testConnection = async (retries = 3, delay = 2000) => {
+  while (retries > 0) {
+    try {
+      await sequelize.authenticate();
+      console.log('PostgreSQL connected successfully!');
+      return;
+    } catch (err: any) {
+      console.error('DB connection error:', err.message || err);
+      retries--;
+      if (retries > 0) {
+        console.log(`🔁 Retrying DB connection... (${retries} retries left)`);
+        await new Promise((res) => setTimeout(res, delay));
+      } else {
+        console.error('Failed to connect to the DB after retries. Exiting.');
+        process.exit(1);
+      }
+    }
   }
 };
