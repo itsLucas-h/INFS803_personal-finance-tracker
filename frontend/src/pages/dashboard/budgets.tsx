@@ -150,7 +150,7 @@ const BudgetForm: React.FC<{
 };
 
 export default function BudgetsPage() {
-  const [categories, setCategories] = useState<string[]>([
+  const categories = [
     'Food',
     'Rent',
     'Transport',
@@ -158,7 +158,7 @@ export default function BudgetsPage() {
     'Entertainment',
     'Utilities',
     'Savings',
-  ]);
+  ];
   const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -175,9 +175,10 @@ export default function BudgetsPage() {
       const data = await budgetService.getBudgets();
       setBudgets(data || []);
       setError(null);
-    } catch (err) {
-      setError('Failed to fetch budgets');
-      console.error('Error fetching budgets:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch budgets';
+      setError(errorMessage);
+      console.error('Error fetching budgets:', error);
     }
   };
 
@@ -205,9 +206,10 @@ export default function BudgetsPage() {
         setBudgets([...budgets, newBudget]);
       }
       setError(null);
-    } catch (err) {
-      setError('Failed to save budget');
-      console.error('Error saving budget:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save budget';
+      setError(errorMessage);
+      console.error('Error saving budget:', error);
     }
   };
 
@@ -217,9 +219,10 @@ export default function BudgetsPage() {
         await budgetService.deleteBudget(id);
         setBudgets(budgets.filter(b => b.id !== id));
         setError(null);
-      } catch (err) {
-        setError('Failed to delete budget');
-        console.error('Error deleting budget:', err);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete budget';
+        setError(errorMessage);
+        console.error('Error deleting budget:', error);
       }
     }
   };
@@ -244,8 +247,10 @@ export default function BudgetsPage() {
       setEditingId(null);
       setEditingBudget(null);
       setIsEditing(false);
-    } catch (err) {
-      setError('Failed to update budget');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update budget';
+      setError(errorMessage);
+      console.error('Error updating budget:', error);
     }
   };
 
