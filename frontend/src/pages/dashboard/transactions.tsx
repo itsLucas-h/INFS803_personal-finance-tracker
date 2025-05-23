@@ -109,31 +109,40 @@ const TransactionForm: React.FC<{
       </div>
       <div className="mb-4">
         <label htmlFor="amount" className={STYLES.label}>Amount</label>
-        <input
-          type="number"
-          id="amount"
-          name="amount"
-          value={formData.amount}
-          onChange={handleChange}
-          className={STYLES.input}
-          required
-          min="0.01"
-          step="0.01"
-          placeholder="0.00"
-        />
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            className={`${STYLES.input} pl-7`}
+            required
+            min="0.01"
+            step="0.01"
+            placeholder="0.00"
+          />
+        </div>
         {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
       </div>
       <div className="mb-4">
         <label htmlFor="description" className={STYLES.label}>Description</label>
-        <input
-          type="text"
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          className={STYLES.input}
-          placeholder="Enter transaction description"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            className={`${STYLES.input} pr-16`}
+            placeholder="Enter transaction description"
+            maxLength={100}
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+            {formData.description.length}/100
+          </span>
+        </div>
         {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
       </div>
       <div className="mb-4">
@@ -190,9 +199,10 @@ export default function TransactionsPage() {
       const data = await transactionService.getTransactions();
       setTransactions(data || []);
       setError(null);
-    } catch (err) {
-      setError('Failed to fetch transactions');
-      console.error('Error fetching transactions:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch transactions';
+      setError(errorMessage);
+      console.error('Error fetching transactions:', error);
     } finally {
       setLoading(false);
     }
@@ -206,9 +216,10 @@ export default function TransactionsPage() {
         setTransactions(prev => [...prev, newTransaction]);
         setError(null);
       }
-    } catch (err) {
-      setError('Failed to create transaction');
-      console.error('Error creating transaction:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create transaction';
+      setError(errorMessage);
+      console.error('Error creating transaction:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -231,8 +242,10 @@ export default function TransactionsPage() {
       setTransactions(transactions.map(t => t.id === editingTransaction.id ? { ...t, ...updatedTransaction } : t));
       setEditingTransaction(null);
       setIsEditing(false);
-    } catch (err) {
-      setError('Failed to update transaction');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update transaction';
+      setError(errorMessage);
+      console.error('Error updating transaction:', error);
     }
   };
 
@@ -242,9 +255,10 @@ export default function TransactionsPage() {
         await transactionService.deleteTransaction(id);
         setTransactions(transactions.filter(t => t.id !== id));
         setError(null);
-      } catch (err) {
-        setError('Failed to delete transaction');
-        console.error('Error deleting transaction:', err);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete transaction';
+        setError(errorMessage);
+        console.error('Error deleting transaction:', error);
       }
     }
   };

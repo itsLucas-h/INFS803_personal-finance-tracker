@@ -7,18 +7,13 @@ interface BudgetEntry {
   month: string;
   amount: number;
   category?: string;
-  description?: string;
 }
 
 interface BudgetData {
   month: string;
   amount: number;
   category: string;
-  description?: string;
 }
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
-const API_URL = `${API_BASE_URL}/api/budgets`;
 
 const STYLES = {
   input: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400",
@@ -32,26 +27,6 @@ const formatMonth = (monthStr: string): string => {
   const [year, month] = monthStr.split('-');
   return new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 };
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : "",
-  };
-};
-
-function toDDMMMYYYY(dateString: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  if (!isNaN(date.getTime())) {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('default', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  }
-  return dateString;
-}
 
 // Pass categories as a prop to BudgetForm and ensure category is always a string
 const getBudgetData = (entry?: BudgetEntry): BudgetData => ({
@@ -140,18 +115,21 @@ const BudgetForm: React.FC<{
       </div>
       <div className="mb-4">
         <label htmlFor="amount" className={STYLES.label}>Amount</label>
-        <input
-          type="number"
-          id="amount"
-          name="amount"
-          value={formData.amount}
-          onChange={handleChange}
-          className={STYLES.input}
-          required
-          min="0.01"
-          step="0.01"
-          placeholder="0.00"
-        />
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            className={`${STYLES.input} pl-7`}
+            required
+            min="0.01"
+            step="0.01"
+            placeholder="0.00"
+          />
+        </div>
         {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
       </div>
       <div className="mb-6">
@@ -175,7 +153,7 @@ const BudgetForm: React.FC<{
 };
 
 export default function BudgetsPage() {
-  const [categories, setCategories] = useState<string[]>([
+  const categories = [
     'Food',
     'Rent',
     'Transport',
@@ -183,7 +161,7 @@ export default function BudgetsPage() {
     'Entertainment',
     'Utilities',
     'Savings',
-  ]);
+  ];
   const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -200,9 +178,10 @@ export default function BudgetsPage() {
       const data = await budgetService.getBudgets();
       setBudgets(data || []);
       setError(null);
-    } catch (err) {
-      setError('Failed to fetch budgets');
-      console.error('Error fetching budgets:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch budgets';
+      setError(errorMessage);
+      console.error('Error fetching budgets:', error);
     }
   };
 
@@ -230,9 +209,10 @@ export default function BudgetsPage() {
         setBudgets([...budgets, newBudget]);
       }
       setError(null);
-    } catch (err) {
-      setError('Failed to save budget');
-      console.error('Error saving budget:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save budget';
+      setError(errorMessage);
+      console.error('Error saving budget:', error);
     }
   };
 
@@ -242,38 +222,45 @@ export default function BudgetsPage() {
         await budgetService.deleteBudget(id);
         setBudgets(budgets.filter(b => b.id !== id));
         setError(null);
-      } catch (err) {
-        setError('Failed to delete budget');
-        console.error('Error deleting budget:', err);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete budget';
+        setError(errorMessage);
+        console.error('Error deleting budget:', error);
       }
     }
   };
 
   const handleEdit = (budget: BudgetEntry) => {
     setEditingBudget(budget);
+    setEditingId(budget.id);
     setIsEditing(true);
   };
 
   const handleEditCancel = () => {
     setEditingBudget(null);
+    setEditingId(null);
     setIsEditing(false);
   };
 
   const handleUpdate = async (updatedBudget: BudgetData) => {
-    if (!editingBudget) return;
+    if (!editingId) return;
     try {
-      await budgetService.updateBudget(editingBudget.id, updatedBudget);
-      setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...b, ...updatedBudget } : b));
+      await budgetService.updateBudget(editingId, updatedBudget);
+      setBudgets(budgets.map(b => b.id === editingId ? { ...b, ...updatedBudget } : b));
+      setEditingId(null);
       setEditingBudget(null);
       setIsEditing(false);
-    } catch (err) {
-      setError('Failed to update budget');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update budget';
+      setError(errorMessage);
+      console.error('Error updating budget:', error);
     }
   };
 
-  // Group budgets by month
   const groupedBudgets = budgets.reduce((acc, budget) => {
-    if (!acc[budget.month]) acc[budget.month] = [];
+    if (!acc[budget.month]) {
+      acc[budget.month] = [];
+    }
     acc[budget.month].push(budget);
     return acc;
   }, {} as Record<string, BudgetEntry[]>);
@@ -290,6 +277,12 @@ export default function BudgetsPage() {
       {error && (
         <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
           {error}
+        </div>
+      )}
+
+      {formError && (
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+          {formError}
         </div>
       )}
 

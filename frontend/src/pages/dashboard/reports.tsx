@@ -57,8 +57,10 @@ function ReportsPage() {
       setTransactions(txs || []);
       setBudgets(buds || []);
       setError(null);
-    } catch (err) {
-      setError('Failed to fetch report data');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch report data';
+      setError(errorMessage);
+      console.error('Error fetching report data:', error);
     } finally {
       setLoading(false);
     }
@@ -70,16 +72,32 @@ function ReportsPage() {
 
   // Pie chart data: expenses by category
   const expenseByCategory = groupByCategory(filteredTxs, 'expense');
+
+  // Define valid budget categories
+  const validBudgetCategories = [
+    'Food',
+    'Rent',
+    'Transport',
+    'Health',
+    'Entertainment',
+    'Utilities',
+    'Savings',
+  ];
+
   // Bar chart data: budget vs. actual by category
-  const barData = filteredBuds.map(b => {
-    const actual = filteredTxs.filter(t => t.category === b.category && t.type === 'expense')
+  const barData = validBudgetCategories.map(category => {
+    const budget = filteredBuds.find(b => b.category === category)?.amount || 0;
+    const actual = filteredTxs
+      .filter(t => t.category === category && t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
+    
     return {
-      category: b.category,
-      Budget: b.amount,
+      category,
+      Budget: budget,
       Actual: actual,
     };
-  });
+  }).filter(item => item.Budget > 0 || item.Actual > 0) // Only show categories with data
+    .sort((a, b) => b.Actual - a.Actual); // Sort by actual amount descending
 
   // Summary
   const totalIncome = filteredTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -96,72 +114,80 @@ function ReportsPage() {
         <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">{error}</div>
       )}
 
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:space-x-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
+      {loading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
-        <div className="flex-1 flex justify-end space-x-8 mt-4 md:mt-0">
-          <div>
-            <div className="text-gray-500 text-sm">Total Income</div>
-            <div className="text-green-600 font-bold text-lg">${totalIncome.toFixed(2)}</div>
-          </div>
-          <div>
-            <div className="text-gray-500 text-sm">Total Expenses</div>
-            <div className="text-red-600 font-bold text-lg">${totalExpense.toFixed(2)}</div>
-          </div>
-          <div>
-            <div className="text-gray-500 text-sm">Net</div>
-            <div className={`font-bold text-lg ${totalIncome - totalExpense >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ${(totalIncome - totalExpense).toFixed(2)}
+      ) : (
+        <>
+          <div className="mb-6 flex flex-col md:flex-row md:items-center md:space-x-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-800 mb-1">Month</label>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={e => setSelectedMonth(e.target.value)}
+                className="border rounded px-3 py-2 text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex-1 flex justify-end space-x-8 mt-4 md:mt-0">
+              <div>
+                <div className="text-gray-500 text-sm">Total Income</div>
+                <div className="text-green-600 font-bold text-lg">${totalIncome.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-sm">Total Expenses</div>
+                <div className="text-red-600 font-bold text-lg">${totalExpense.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-sm">Net</div>
+                <div className={`font-bold text-lg ${totalIncome - totalExpense >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${(totalIncome - totalExpense).toFixed(2)}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">Expenses by Category</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={expenseByCategory}
-                dataKey="amount"
-                nameKey="category"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                fill="#8884d8"
-                label
-              >
-                {expenseByCategory.map((entry, idx) => (
-                  <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">Budget vs. Actual</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Budget" fill="#8884d8" />
-              <Bar dataKey="Actual" fill="#ff8042" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">Expenses by Category</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={expenseByCategory}
+                    dataKey="amount"
+                    nameKey="category"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#8884d8"
+                    label
+                  >
+                    {expenseByCategory.map((entry, idx) => (
+                      <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">Budget vs. Actual</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={barData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="Budget" fill="#8884d8" />
+                  <Bar dataKey="Actual" fill="#ff8042" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }

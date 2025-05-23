@@ -128,19 +128,19 @@ export default function GoalsPage() {
               key={goal.id}
               className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition"
             >
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">{goal.title}</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4 break-words line-clamp-2 min-h-[3rem]">{goal.title}</h3>
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Target:</span>
-                  <span className="font-medium text-gray-800">${goal.targetAmount}</span>
+                  <span className="font-medium text-gray-800">${goal.targetAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Saved:</span>
-                  <span className="font-medium text-gray-800">${goal.currentAmount}</span>
+                  <span className="font-medium text-gray-800">${goal.currentAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Deadline:</span>
-                  <span className="font-medium text-gray-800">{goal.deadline}</span>
+                  <span className="font-medium text-gray-800">{new Date(goal.deadline).toLocaleDateString()}</span>
                 </div>
               </div>
               <div className="flex justify-end space-x-4 mt-4">
