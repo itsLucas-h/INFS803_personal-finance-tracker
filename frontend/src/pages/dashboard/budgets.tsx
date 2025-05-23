@@ -7,18 +7,13 @@ interface BudgetEntry {
   month: string;
   amount: number;
   category?: string;
-  description?: string;
 }
 
 interface BudgetData {
   month: string;
   amount: number;
   category: string;
-  description?: string;
 }
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
-const API_URL = `${API_BASE_URL}/api/budgets`;
 
 const STYLES = {
   input: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400",
@@ -32,26 +27,6 @@ const formatMonth = (monthStr: string): string => {
   const [year, month] = monthStr.split('-');
   return new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 };
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : "",
-  };
-};
-
-function toDDMMMYYYY(dateString: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  if (!isNaN(date.getTime())) {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('default', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  }
-  return dateString;
-}
 
 // Pass categories as a prop to BudgetForm and ensure category is always a string
 const getBudgetData = (entry?: BudgetEntry): BudgetData => ({
@@ -251,19 +226,22 @@ export default function BudgetsPage() {
 
   const handleEdit = (budget: BudgetEntry) => {
     setEditingBudget(budget);
+    setEditingId(budget.id);
     setIsEditing(true);
   };
 
   const handleEditCancel = () => {
     setEditingBudget(null);
+    setEditingId(null);
     setIsEditing(false);
   };
 
   const handleUpdate = async (updatedBudget: BudgetData) => {
-    if (!editingBudget) return;
+    if (!editingId) return;
     try {
-      await budgetService.updateBudget(editingBudget.id, updatedBudget);
-      setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...b, ...updatedBudget } : b));
+      await budgetService.updateBudget(editingId, updatedBudget);
+      setBudgets(budgets.map(b => b.id === editingId ? { ...b, ...updatedBudget } : b));
+      setEditingId(null);
       setEditingBudget(null);
       setIsEditing(false);
     } catch (err) {
@@ -271,20 +249,11 @@ export default function BudgetsPage() {
     }
   };
 
-  // Group budgets by month
-  const groupedBudgets = budgets.reduce((acc, budget) => {
-    if (!acc[budget.month]) acc[budget.month] = [];
-    acc[budget.month].push(budget);
-    return acc;
-  }, {} as Record<string, BudgetEntry[]>);
-
   return (
     <DashboardLayout>
       <div className="flex flex-col items-center text-center space-y-4 mb-8">
-        <h1 className="text-gray-600 text-2xl font-bold">Monthly Budget</h1>
-        <p className="text-gray-600">
-          Plan and track your monthly budget across different categories.
-        </p>
+        <h1 className="text-gray-800 text-2xl font-bold">Budgets</h1>
+        <p className="text-gray-600">Set and manage your monthly budgets.</p>
       </div>
 
       {error && (
@@ -293,12 +262,15 @@ export default function BudgetsPage() {
         </div>
       )}
 
+      {formError && (
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+          {formError}
+        </div>
+      )}
+
       {!isEditing && (
         <BudgetForm
           onSubmit={handleSubmit}
-          isLoading={false}
-          initialData={getBudgetData()}
-          isEditing={false}
           categories={categories}
         />
       )}
@@ -314,10 +286,9 @@ export default function BudgetsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <h2 className="text-xl font-semibold mb-4 text-gray-600">Edit Budget</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Edit Budget</h2>
           <BudgetForm
             onSubmit={handleUpdate}
-            isLoading={false}
             initialData={getBudgetData(editingBudget)}
             isEditing={true}
             categories={categories}
@@ -325,67 +296,45 @@ export default function BudgetsPage() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto">
-        <h2 className="text-xl font-semibold mb-6 text-gray-800">Budgets by Month</h2>
-        {budgets.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            No budgets added yet. Add your first budget above.
-          </div>
-        ) : (
+      {budgets.length === 0 ? (
+        <div className="text-center py-8 text-gray-600">
+          No budgets found. Add your first budget above.
+        </div>
+      ) : (
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-xl font-semibold mb-6 text-gray-800">Budgets</h2>
           <div className="space-y-6">
-            {Object.entries(groupedBudgets).map(([month, monthBudgets]) => (
-              <div key={month} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold mb-4 text-gray-800">{formatMonth(month)}</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                          Category
-                        </th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">
-                          Amount
-                        </th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {monthBudgets.map((entry) => (
-                        <tr key={entry.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-800">
-                            {entry.category}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-right text-gray-800">${entry.amount.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-sm text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <button
-                                onClick={() => handleEdit(entry)}
-                                className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 text-sm"
-                                disabled={isEditing}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(entry.id)}
-                                className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 text-sm"
-                                title="Delete budget entry"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            {budgets.map((budget) => (
+              <div key={budget.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <span className="font-medium text-gray-800">{budget.category}</span>
+                    <span className="ml-2 text-gray-500 text-sm">{formatMonth(budget.month)}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEdit(budget)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                      disabled={isEditing}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(budget.id)}
+                      className="text-red-600 hover:text-red-800 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-800">
+                  ${budget.amount.toFixed(2)}
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
