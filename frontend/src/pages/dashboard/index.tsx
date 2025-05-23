@@ -4,7 +4,7 @@ import { withAuth } from "@/components/auth/withAuth";
 import { transactionService } from '@/services/transactionService';
 import { TransactionData } from '@/components/transaction';
 import Link from 'next/link';
-import { Wallet, TrendingUp, TrendingDown, Plus, Target, PieChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Target, PieChart } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -94,8 +94,6 @@ function DashboardHome() {
         monthlyIncome,
         monthlyExpenses,
       });
-
-      const chartData = getChartData(transactionsData, groupBy);
 
       setError(null);
     } catch (err) {

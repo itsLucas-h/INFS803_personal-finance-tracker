@@ -81,52 +81,62 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData = defaultGoal, onSubmit
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                     Saving Goal Name
                 </label>
-                <input
-                    type="text"
-                    id="title"
-                    placeholder="Name of savings goal"
-                    name="title"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
-                    value={goal.title}
-                    onChange={handleChange}
-                    required
-                />
+                <div className="relative">
+                    <input
+                        type="text"
+                        id="title"
+                        placeholder="Name of savings goal"
+                        name="title"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 pr-20 text-sm"
+                        value={goal.title}
+                        onChange={handleChange}
+                        required
+                        maxLength={50}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 whitespace-nowrap">
+                        {goal.title.length}/50
+                    </span>
+                </div>
             </div>
 
             <div className="mb-4">
                 <label htmlFor="targetAmount" className="block text-sm font-medium text-gray-700 mb-1">
                     Target Goal Amount
                 </label>
-                <input
-                    type="number"
-                    id="targetAmount"
-                    placeholder="$"
-                    name="targetAmount"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
-                    value={goal.targetAmount}
-                    onChange={handleChange}
-                    required
-                    min="0.01"
-                    step="0.01"
-                />
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                        type="number"
+                        id="targetAmount"
+                        name="targetAmount"
+                        value={goal.targetAmount}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 pl-7"
+                        required
+                        min="0.01"
+                        step="0.01"
+                    />
+                </div>
             </div>
 
             <div className="mb-4">
                 <label htmlFor="currentAmount" className="block text-sm font-medium text-gray-700 mb-1">
                     Current Amount
                 </label>
-                <input
-                    type="number"
-                    id="currentAmount"
-                    placeholder="$"
-                    name="currentAmount"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
-                    value={goal.currentAmount}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                    step="0.01"
-                />
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                        type="number"
+                        id="currentAmount"
+                        name="currentAmount"
+                        value={goal.currentAmount}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 pl-7"
+                        required
+                        min="0"
+                        step="0.01"
+                    />
+                </div>
             </div>
 
             <div className="mb-6">

@@ -115,18 +115,21 @@ const BudgetForm: React.FC<{
       </div>
       <div className="mb-4">
         <label htmlFor="amount" className={STYLES.label}>Amount</label>
-        <input
-          type="number"
-          id="amount"
-          name="amount"
-          value={formData.amount}
-          onChange={handleChange}
-          className={STYLES.input}
-          required
-          min="0.01"
-          step="0.01"
-          placeholder="0.00"
-        />
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            className={`${STYLES.input} pl-7`}
+            required
+            min="0.01"
+            step="0.01"
+            placeholder="0.00"
+          />
+        </div>
         {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
       </div>
       <div className="mb-6">
