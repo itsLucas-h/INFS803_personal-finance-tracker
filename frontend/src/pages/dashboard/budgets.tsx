@@ -58,7 +58,6 @@ const getBudgetData = (entry?: BudgetEntry): BudgetData => ({
   month: entry?.month || new Date().toISOString().slice(0, 7),
   amount: entry?.amount || 0,
   category: entry?.category || '',
-  description: entry?.description || '',
 });
 
 // Inline BudgetForm component
@@ -73,7 +72,6 @@ const BudgetForm: React.FC<{
     month: initialData?.month || new Date().toISOString().slice(0, 7),
     amount: initialData?.amount || 0,
     category: initialData?.category || '',
-    description: initialData?.description || '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof BudgetData, string>>>({});
 
@@ -85,7 +83,6 @@ const BudgetForm: React.FC<{
         month: new Date().toISOString().slice(0, 7),
         amount: 0,
         category: '',
-        description: '',
       });
     }
   }, [initialData, isEditing]);
@@ -108,7 +105,6 @@ const BudgetForm: React.FC<{
           month: new Date().toISOString().slice(0, 7),
           amount: 0,
           category: '',
-          description: '',
         });
       }
       setErrors({});
@@ -158,18 +154,6 @@ const BudgetForm: React.FC<{
         />
         {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
       </div>
-      <div className="mb-4">
-        <label htmlFor="description" className={STYLES.label}>Description</label>
-        <input
-          type="text"
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          className={STYLES.input}
-          placeholder="Enter budget description (optional)"
-        />
-      </div>
       <div className="mb-6">
         <label htmlFor="month" className={STYLES.label}>Month</label>
         <input
@@ -191,12 +175,6 @@ const BudgetForm: React.FC<{
 };
 
 export default function BudgetsPage() {
-  const [formData, setFormData] = useState<BudgetData>({
-    month: new Date().toISOString().slice(0, 7),
-    amount: 0,
-    category: '',
-    description: '',
-  });
   const [categories, setCategories] = useState<string[]>([
     'Food',
     'Rent',
@@ -213,42 +191,6 @@ export default function BudgetsPage() {
   const [editingBudget, setEditingBudget] = useState<BudgetEntry | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const getCurrentYear = () => new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => getCurrentYear() - 2 + i);
-
-  const months = [
-    { value: '01', label: 'January' },
-    { value: '02', label: 'February' },
-    { value: '03', label: 'March' },
-    { value: '04', label: 'April' },
-    { value: '05', label: 'May' },
-    { value: '06', label: 'June' },
-    { value: '07', label: 'July' },
-    { value: '08', label: 'August' },
-    { value: '09', label: 'September' },
-    { value: '10', label: 'October' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'December' },
-  ];
-
-  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const year = formData.month.split('-')[0];
-    const month = e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      month: `${year}-${month}`
-    }));
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const year = e.target.value;
-    const month = formData.month.split('-')[1];
-    setFormData(prev => ({
-      ...prev,
-      month: `${year}-${month}`
-    }));
-  };
-
   useEffect(() => {
     fetchBudgets();
   }, []);
@@ -264,15 +206,14 @@ export default function BudgetsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (budgetData: BudgetData) => {
     setFormError(null);
 
-    if (!formData.category) {
+    if (!budgetData.category) {
       setFormError("Please select a category.");
       return;
     }
-    if (formData.amount <= 0) {
+    if (budgetData.amount <= 0) {
       setFormError("Amount must be greater than 0.");
       return;
     }
@@ -280,35 +221,19 @@ export default function BudgetsPage() {
     try {
       if (editingId) {
         // Edit mode
-        const updatedBudget = await budgetService.updateBudget(editingId, formData);
+        const updatedBudget = await budgetService.updateBudget(editingId, budgetData);
         setBudgets(budgets.map(b => b.id === editingId ? updatedBudget : b));
         setEditingId(null);
       } else {
         // Create mode
-        const newBudget = await budgetService.createBudget(formData);
+        const newBudget = await budgetService.createBudget(budgetData);
         setBudgets([...budgets, newBudget]);
       }
-      setFormData({
-        month: new Date().toISOString().slice(0, 7),
-        amount: 0,
-        category: '',
-        description: '',
-      });
       setError(null);
     } catch (err) {
       setError('Failed to save budget');
       console.error('Error saving budget:', err);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'amount' ? parseFloat(value) || 0 : 
-              name === 'month' ? value :
-              value
-    }));
   };
 
   const handleDelete = async (id: string) => {
@@ -370,7 +295,7 @@ export default function BudgetsPage() {
 
       {!isEditing && (
         <BudgetForm
-          onSubmit={handleSubmit as any}
+          onSubmit={handleSubmit}
           isLoading={false}
           initialData={getBudgetData()}
           isEditing={false}
@@ -421,10 +346,7 @@ export default function BudgetsPage() {
                         <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">
                           Amount
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                          Description
-                        </th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">
                           Actions
                         </th>
                       </tr>
@@ -436,12 +358,11 @@ export default function BudgetsPage() {
                             {entry.category}
                           </td>
                           <td className="px-4 py-3 text-sm text-right text-gray-800">${entry.amount.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-sm text-gray-800">{entry.description || '-'}</td>
-                          <td className="px-4 py-3 text-sm text-center">
-                            <div className="flex items-center justify-end">
+                          <td className="px-4 py-3 text-sm text-right">
+                            <div className="flex items-center justify-end space-x-2">
                               <button
                                 onClick={() => handleEdit(entry)}
-                                className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed mr-2 px-3 py-1 text-sm"
+                                className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 text-sm"
                                 disabled={isEditing}
                               >
                                 Edit

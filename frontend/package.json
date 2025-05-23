@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/recharts": "^1.8.29",
     "axios": "^1.8.4",
     "dotenv": "^16.4.7",
     "lucide-react": "^0.487.0",
