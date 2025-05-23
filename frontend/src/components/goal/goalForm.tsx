@@ -26,21 +26,24 @@ const defaultGoal: Goal = {
 
 const GoalForm: React.FC<GoalFormProps> = ({ initialData = defaultGoal, onSubmit, isEditing = false }) => {
     const [goal, setGoal] = useState<Goal>(initialData);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setGoal(initialData);
     }, [initialData]);
 
     const validateInput = (): boolean => {
+        setError(null);
+        
         if (goal.currentAmount > goal.targetAmount) {
-            console.error('Current amount must be less than target amount');
+            setError('Current amount cannot be greater than target amount');
             return false;
         }
 
         const selectedDate = new Date(goal.deadline);
         const today = new Date();
         if (selectedDate < today) {
-            console.error('Deadline can not be set in the past');
+            setError('Deadline cannot be set in the past');
             return false;
         }
 
@@ -55,6 +58,8 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData = defaultGoal, onSubmit
                 ? parseFloat(value) || 0.0
                 : value
         }));
+        // Clear error when user makes changes
+        setError(null);
     };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -66,6 +71,12 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData = defaultGoal, onSubmit
 
     return (
         <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm mb-8">
+            {error && (
+                <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+                    {error}
+                </div>
+            )}
+            
             <div className="mb-4">
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                     Saving Goal Name
