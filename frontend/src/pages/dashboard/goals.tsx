@@ -16,9 +16,8 @@ export default function GoalsPage() {
   }, []);
 
   const fetchGoals = async () => {
-    try{
+    try {
       const fetchedGoals = await goalService.getGoals();
-      console.log("Fetched goals: ", fetchedGoals);
       setGoals(fetchedGoals || []);
       setError(null);
     } catch (err) {
@@ -29,31 +28,14 @@ export default function GoalsPage() {
     }
   }
 
-  /*
   const handleGoalSubmit = async (goal: Goal) => {
     try {
-      await goalService.createGoal(goal);
-      console.log("Goal submitted: ", goal);
-      const updatedGoals = await goalService.getGoals();
-      setGoals(updatedGoals || []);
-      setShowForm(false);
-    } catch (error) {
-      console.error("Failed to submit goal", error);
-    }
-  };
-  */
-
-  const handleGoalSubmit = async (goal: Goal) => {
-    try{
-
-      if(editingGoal)
-      {
+      if (editingGoal) {
         const updatedGoal = await goalService.updateGoal(goal.id, goal);
         setGoals(prev => 
           prev.map(g => (g.id === updatedGoal.id ? updatedGoal : g))
         );
-      }
-      else{
+      } else {
         const newGoal = await goalService.createGoal(goal);
         setGoals(prev => [...prev, newGoal]);
       }
@@ -61,108 +43,127 @@ export default function GoalsPage() {
       setShowForm(false);
       setEditingGoal(null);
       setError(null);
-    } catch(err) {
+    } catch (err) {
       setError('Failed to create new goal');
-      console.error('Error creating goal: ', err );
+      console.error('Error creating goal: ', err);
     }
   }
 
   const handleGoalDelete = async (id: string) => {
-     if (!window.confirm('Are you sure you want to delete this goal?')) {
+    if (!window.confirm('Are you sure you want to delete this goal?')) {
       return;
-     }
+    }
 
-      try{
-        await goalService.deleteGoal(id);
-        setGoals(prev => prev.filter(t => t.id !== id));
-        setError(null);
-      } catch (err) {
-        setError('Failed to delete goal');
-        console.error('Error deleting goal: ', err)
-      }
+    try {
+      await goalService.deleteGoal(id);
+      setGoals(prev => prev.filter(t => t.id !== id));
+      setError(null);
+    } catch (err) {
+      setError('Failed to delete goal');
+      console.error('Error deleting goal: ', err);
+    }
   }
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col items-center text-center space-y-4">
-        <h1 className="text-gray-600 text-2xl font-bold">Goals</h1>
+      <div className="flex flex-col items-center text-center space-y-4 mb-8">
+        <h1 className="text-gray-800 text-2xl font-bold">Goals</h1>
         <p className="text-gray-600">Set and track your financial goals with ease.</p>
+      </div>
 
-        <button
-          type="button"
-          className="px-10 py-2 bg-gray-500 text-white rounded-lg"
-          onClick={() => setShowForm(true)}
-        >
-          + Set a new goal
-        </button>
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
 
-        {loading && <p>Loading goals...</p>}
-        {error && <p className="text-red-600">{error}</p>}
+      {!showForm && (
+        <div className="flex justify-center mb-6">
+          <button
+            type="button"
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            onClick={() => setShowForm(true)}
+          >
+            + Set a new goal
+          </button>
+        </div>
+      )}
 
-        {!loading && !error && goals.length === 0 && <p>No goals found.</p>}
+      {showForm && (
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              {editingGoal ? "Edit Goal" : "New Goal"}
+            </h2>
+            <button
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+              onClick={() => {
+                setShowForm(false);
+                setEditingGoal(null);
+              }}
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <GoalForm 
+            initialData={editingGoal || undefined}
+            isEditing={!!editingGoal}
+            onSubmit={handleGoalSubmit} 
+          />
+        </div>
+      )}
 
-        {!loading && !error && goals.length > 0 && (
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6 w-full px-4">
-            {goals.map((goal) => (
-              <div
-                key={goal.id}
-                className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition"
-              >
-                <h3 className="text-xl font-bold text-black-700 mb-3">{goal.title}</h3>
-                <div className="text-gray-700 space-y-1 mb-3">
-                  <p>
-                    <span className="font-medium">Target:</span> ${goal.targetAmount}
-                  </p>
-                  <p>
-                    <span className="font-medium">Saved:</span> ${goal.currentAmount}
-                  </p>
-                  <p>
-                    <span className="font-medium">Deadline:</span> {goal.deadline}
-                  </p>
+      {loading ? (
+        <div className="text-center py-8 text-gray-600">Loading goals...</div>
+      ) : goals.length === 0 ? (
+        <div className="text-center py-8 text-gray-600">
+          No goals found. Set your first goal to get started.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full px-4">
+          {goals.map((goal) => (
+            <div
+              key={goal.id}
+              className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition"
+            >
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">{goal.title}</h3>
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Target:</span>
+                  <span className="font-medium text-gray-800">${goal.targetAmount}</span>
                 </div>
-                <div className="flex justify-between mt-4">
-                  <button
-                    className="text-blue-600 hover:underline"
-                    onClick={() => {
-                      setEditingGoal(goal);
-                      setShowForm(true);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="text-red-600 hover:underline"
-                    onClick={() => handleGoalDelete(goal.id)}
-                  >
-                    Delete
-                  </button>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Saved:</span>
+                  <span className="font-medium text-gray-800">${goal.currentAmount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Deadline:</span>
+                  <span className="font-medium text-gray-800">{goal.deadline}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-
-        {showForm && (
-          <div className="fixed bg-gray-100 bg-opacity-40 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg w-full shadow-lg relative">
-              <button
-                className="absolute text-4xl top-2 right-2 text-gray-600 hover:text-black"
-                onClick={() => setShowForm(false)}
-              >
-                ×
-              </button>
-              <h2 className="text-3xl font-semibold text-center py-10">
-                { editingGoal ? "Edit Goal" : "New Goal"}
-              </h2>
-              <GoalForm 
-              initialData={editingGoal || undefined}
-              isEditing={true}
-              onSubmit={handleGoalSubmit} 
-              />
+              <div className="flex justify-end space-x-4 mt-4">
+                <button
+                  className="text-blue-600 hover:text-blue-800 transition-colors"
+                  onClick={() => {
+                    setEditingGoal(goal);
+                    setShowForm(true);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                  onClick={() => handleGoalDelete(goal.id)}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </DashboardLayout>
   );
 }

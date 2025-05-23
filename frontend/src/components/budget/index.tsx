@@ -2,7 +2,6 @@ export interface BudgetData {
   month: string;
   amount: number;
   category: string;
-  description?: string;
 }
 
 export interface BudgetResponse {
@@ -10,7 +9,6 @@ export interface BudgetResponse {
   month: string;
   amount: number;
   category: string;
-  description?: string;
   createdAt: string;
   updatedAt: string;
 } 

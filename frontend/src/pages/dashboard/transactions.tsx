@@ -37,7 +37,7 @@ const CATEGORIES = [
   'Other',
 ];
 
-const getTransactionData = (entry?: Transaction): TransactionData => ({
+const getTransactionData = (entry?: TransactionData): TransactionData => ({
   amount: entry?.amount || 0,
   description: entry?.description || '',
   category: entry?.category || '',
