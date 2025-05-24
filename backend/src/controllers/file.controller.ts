@@ -33,36 +33,47 @@ export const handleFileUpload: Controller = async (req, res, next) => {
       url: fileUrl,
     });
   } catch (error) {
-    console.error('❌ S3 Upload Error:', error);
+    console.error('Upload error:', error);
     next(error);
   }
 };
 
-export const getPresignedFileUrl: Controller = async (req, res, next) => {
+export const getPresignedViewUrl: Controller = async (req, res, next) => {
   try {
     const { key } = req.query;
-
     if (!key || typeof key !== 'string') {
       return res.status(400).json({ message: "Missing or invalid 'key' query parameter" });
     }
 
-    const userId = req.user!.id;
-
-    const file = await FileModel.findOne({
-      where: { key, userId },
-    });
-
-    if (!file) {
-      return res.status(403).json({ message: 'Access denied to this file.' });
-    }
+    const file = await FileModel.findOne({ where: { key, userId: req.user!.id } });
+    if (!file) return res.status(403).json({ message: 'Access denied to this file.' });
 
     await file.increment('downloadCount');
 
-    const presignedUrl = await generatePresignedUrl(key);
-
-    res.status(200).json({ url: presignedUrl });
+    const url = await generatePresignedUrl(key, 'inline');
+    res.status(200).json({ url });
   } catch (err) {
-    console.error('❌ Presigned URL error:', err);
+    console.error('Presigned view URL error:', err);
+    next(err);
+  }
+};
+
+export const getPresignedDownloadUrl: Controller = async (req, res, next) => {
+  try {
+    const { key } = req.query;
+    if (!key || typeof key !== 'string') {
+      return res.status(400).json({ message: "Missing or invalid 'key' query parameter" });
+    }
+
+    const file = await FileModel.findOne({ where: { key, userId: req.user!.id } });
+    if (!file) return res.status(403).json({ message: 'Access denied to this file.' });
+
+    await file.increment('downloadCount');
+
+    const url = await generatePresignedUrl(key, 'attachment');
+    res.status(200).json({ url });
+  } catch (err) {
+    console.error('Presigned download URL error:', err);
     next(err);
   }
 };
@@ -70,13 +81,11 @@ export const getPresignedFileUrl: Controller = async (req, res, next) => {
 export const getMyFiles: Controller = async (req, res, next) => {
   try {
     const userId = req.user!.id;
-
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const mimeType = req.query.mimeType as string | undefined;
 
     const offset = (page - 1) * limit;
-
     const whereClause: any = { userId };
     if (mimeType) whereClause.mimeType = mimeType;
 
@@ -94,7 +103,7 @@ export const getMyFiles: Controller = async (req, res, next) => {
       files: rows,
     });
   } catch (error) {
-    console.error('❌ Get Files Error:', error);
+    console.error('Get files error:', error);
     next(error);
   }
 };
@@ -102,31 +111,27 @@ export const getMyFiles: Controller = async (req, res, next) => {
 export const deleteFile: Controller = async (req, res, next) => {
   try {
     const { key } = req.query;
-
     if (!key || typeof key !== 'string') {
       return res.status(400).json({ message: "Missing or invalid 'key' query parameter" });
     }
 
-    const userId = req.user!.id;
-
-    const file = await FileModel.findOne({ where: { key, userId } });
-
+    const file = await FileModel.findOne({ where: { key, userId: req.user!.id } });
     if (!file) {
       return res.status(404).json({ message: 'File not found or access denied.' });
     }
 
-    const command = new DeleteObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME!,
-      Key: key,
-    });
-
-    await s3.send(command);
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME!,
+        Key: key,
+      }),
+    );
 
     await file.destroy();
 
     res.status(200).json({ message: 'File deleted successfully.' });
   } catch (err) {
-    console.error('❌ Delete File Error:', err);
+    console.error('Delete file error:', err);
     next(err);
   }
 };

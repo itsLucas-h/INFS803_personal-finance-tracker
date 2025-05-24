@@ -19,7 +19,7 @@ export const createBudget: Controller = async (req, res, next) => {
 
     res.status(201).json({ message: 'Budget created successfully', budget });
   } catch (error) {
-    console.error('❌ Create Budget Error:', error);
+    console.error('Create Budget Error:', error);
     next(error);
   }
 };
@@ -33,7 +33,7 @@ export const getBudgets: Controller = async (req, res, next) => {
 
     res.status(200).json({ message: 'Goals fetched successfully', budgets });
   } catch (error) {
-    console.error('❌ Get Budgets Error:', error);
+    console.error('Get Budgets Error:', error);
     next(error);
   }
 };
@@ -59,7 +59,7 @@ export const updateBudget: Controller = async (req, res, next) => {
 
     res.status(200).json({ message: 'Budget updated successfully', budget });
   } catch (error) {
-    console.error('❌ Update Budget Error:', error);
+    console.error('Update Budget Error:', error);
     next(error);
   }
 };
@@ -81,7 +81,7 @@ export const deleteBudget: Controller = async (req, res, next) => {
 
     res.status(200).json({ message: 'Budget deleted successfully' });
   } catch (error) {
-    console.error('❌ Delete Budget Error:', error);
+    console.error('Delete Budget Error:', error);
     next(error);
   }
 };

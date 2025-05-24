@@ -38,7 +38,7 @@ export const registerUser = async (
       user: userWithoutPassword,
     });
   } catch (err) {
-    console.error('❌ Register error:', err);
+    console.error('Register error:', err);
     next(err);
   }
 };
@@ -82,7 +82,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       },
     });
   } catch (error) {
-    console.error('❌ Login error:', error);
+    console.error('Login error:', error);
     next(error);
   }
 };

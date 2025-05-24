@@ -9,9 +9,14 @@ interface FileAttributes {
   mimeType: string;
   size: number;
   downloadCount: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-type FileCreationAttributes = Optional<FileAttributes, 'id' | 'downloadCount'>;
+type FileCreationAttributes = Optional<
+  FileAttributes,
+  'id' | 'downloadCount' | 'createdAt' | 'updatedAt'
+>;
 
 export class File extends Model<FileAttributes, FileCreationAttributes> implements FileAttributes {
   public id!: number;
@@ -36,31 +41,39 @@ File.init(
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      comment: 'References the user who uploaded the file',
     },
     key: {
       type: DataTypes.STRING,
       allowNull: false,
+      comment: 'The unique S3 object key for the file',
     },
     originalName: {
       type: DataTypes.STRING,
       allowNull: false,
+      comment: 'Original file name as uploaded by the user',
     },
     mimeType: {
       type: DataTypes.STRING,
       allowNull: false,
+      comment: 'The MIME type of the file',
     },
     size: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      comment: 'File size in bytes',
     },
     downloadCount: {
       type: DataTypes.INTEGER,
+      allowNull: false,
       defaultValue: 0,
+      comment: 'Number of times the file has been viewed or downloaded',
     },
   },
   {
     sequelize,
-    tableName: 'files',
     modelName: 'File',
+    tableName: 'files',
+    timestamps: true,
   },
 );
