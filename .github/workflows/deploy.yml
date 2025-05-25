@@ -5,71 +5,104 @@ on:
     branches: [main]
 
 jobs:
-  build-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 23
-
-      - name: Install backend dependencies
-        run: npm ci
-        working-directory: backend
-
-      - name: Build backend
-        run: npm run build
-        working-directory: backend
-
-      - name: Run backend tests
-        run: npm test
-        working-directory: backend
-
   deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: build-test
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deploy to EC2 via SSH and Docker
+      - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Update system
-            sudo apt-get update
-            sudo apt-get install -y git curl
+            set -e
 
-            # Install Docker if not already installed
-            if ! command -v docker &> /dev/null; then
-              curl -fsSL https://get.docker.com -o get-docker.sh
-              sudo sh get-docker.sh
-              sudo usermod -aG docker $USER
+            echo "=== 1. Updating system and installing dependencies ==="
+            sudo dnf update -y
+            sudo dnf install -y git nginx
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            sudo dnf install -y nodejs
+            sudo npm install -g pm2
+
+            echo "=== 2. Starting and enabling NGINX ==="
+            sudo systemctl enable nginx
+            sudo systemctl start nginx
+
+            echo "=== 3. Cloning or updating the repository ==="
+            cd ~
+            if [ ! -d "INFS803_personal-finance-tracker" ]; then
+              git clone https://github.com/itsLucas-h/INFS803_personal-finance-tracker.git
             fi
-
-            # Clean up Docker to prevent ENOSPC errors
-            docker system prune -af --volumes
-
-            # Clone or update repository
-            if [ ! -d "~/INFS803_personal-finance-tracker" ]; then
-              git clone https://github.com/itsLucas-h/INFS803_personal-finance-tracker.git ~/INFS803_personal-finance-tracker
-            fi
-
-            cd ~/INFS803_personal-finance-tracker
+            cd INFS803_personal-finance-tracker
             git fetch origin main
             git reset --hard origin/main
 
-            # === Backend ===
-            docker stop backend || true
-            docker rm backend || true
-            docker build -t backend ./backend
-            docker run -d -p 5000:5000 --name backend backend
+            echo "=== 4. Creating backend .env file ==="
+            cat > backend/.env <<EOF
+            PORT=5000
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            BACKEND_URL=${{ secrets.BACKEND_URL }}
+            EOF
 
-            # === Frontend ===
-            docker stop frontend || true
-            docker rm frontend || true
-            docker build -t frontend ./frontend
-            docker run -d -p 3000:80 --name frontend frontend
+            echo "=== 5. Installing, building, and starting backend ==="
+            cd backend
+            npm ci
+            npm run build || { echo "Backend build failed"; exit 1; }
+            pm2 delete backend || true
+            pm2 start dist/server.js --name backend
+            cd ..
+
+            echo "=== 6. Creating frontend .env file ==="
+            echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" > frontend/.env
+
+            echo "=== 7. Installing, building, and starting frontend ==="
+            cd frontend || { echo "Frontend folder not found"; exit 1; }
+            npm ci
+            npm run build || { echo "Frontend build failed"; exit 1; }
+            pm2 delete frontend || true
+            pm2 start npm --name frontend -- start
+            cd ..
+
+            echo "=== 8. Saving PM2 process list for auto-restart ==="
+            pm2 startup
+            pm2 save
+
+            echo "=== 9. Writing NGINX reverse proxy config ==="
+            sudo bash -c 'cat > /etc/nginx/conf.d/finance-app.conf' <<EOF
+            server {
+                listen 80;
+                server_name ${{ secrets.ELASTIC_IP }};
+
+                location /api/ {
+                    proxy_pass http://localhost:5000/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+                }
+
+                location / {
+                    proxy_pass http://localhost:3000/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+                }
+            }
+            EOF
+
+            echo "=== 10. Testing and restarting NGINX ==="
+            sudo nginx -t && sudo systemctl restart nginx

@@ -2,42 +2,52 @@ import http from 'http';
 import app from './app.js';
 import { testConnection, sequelize } from './config/db.js';
 
-const PORT: number = parseInt(process.env.PORT || '5000', 10);
+const PORT = parseInt(process.env.PORT || '5000', 10);
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+
 const server = http.createServer(app);
 
 const startServer = async () => {
-  console.log(`🔁 Initializing backend server on port ${PORT}...`);
-
-  await testConnection();
+  console.log(`Starting backend server on port ${PORT}...`);
 
   try {
-    console.log('⏳ Synchronizing database models...');
+    await testConnection();
+    console.log('Database connection established.');
+
+    console.log('Synchronising database models...');
     await sequelize.sync();
-    console.log('✅ Database models synchronized successfully.');
+    console.log('Database models synchronised.');
   } catch (error) {
-    console.error('❌ Sequelize sync failed:', error);
+    console.error('Startup failed:', error);
     process.exit(1);
   }
 
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server is running at http://0.0.0.0:${PORT}`);
+    console.log('------------------------------------------');
+    console.log(`Backend URL:  ${BACKEND_URL}`);
+    console.log(`Localhost:    http://localhost:${PORT}`);
+    console.log('');
+    console.log(`Frontend URL: ${FRONTEND_URL}`);
+    console.log(`Localhost:    http://localhost:3000`);
+    console.log('------------------------------------------');
   });
 };
 
 startServer();
 
 const shutdown = async () => {
-  console.log('\n🛑 Shutting down server gracefully...');
+  console.log('\nShutting down server gracefully...');
 
   server.close(async () => {
-    console.log('🔒 HTTP server closed.');
+    console.log('HTTP server closed.');
 
     try {
       await sequelize.close();
-      console.log('🗄️ Database connection closed.');
+      console.log('Database connection closed.');
       process.exit(0);
     } catch (err) {
-      console.error('❌ Error during shutdown:', err);
+      console.error('Shutdown error:', err);
       process.exit(1);
     }
   });

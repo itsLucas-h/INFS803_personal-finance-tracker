@@ -22,7 +22,7 @@ export const protect: RequestHandler = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    console.error('❌ Invalid JWT:', error);
+    console.error('Invalid JWT:', error);
     res.status(401).json({ message: 'Unauthorized: Invalid token' });
   }
 };

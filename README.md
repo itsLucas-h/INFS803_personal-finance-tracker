@@ -205,8 +205,8 @@ JWT tokens are passed via the `Authorization: Bearer <token>` header.
 Clone & Install
 
 ```bash
-git clone https://github.com/your-username/infs803-finance-tracker-backend.git
-cd infs803-finance-tracker-backend
+git clone https://github.com/your-username/INFS803_personal-finance-tracker.git
+cd INFS803_personal-finance-tracker\backend
 npm install
 ```
 

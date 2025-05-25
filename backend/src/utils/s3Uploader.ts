@@ -5,10 +5,16 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3 } from '../config/s3.js';
 import type { Express } from 'express';
 
+// In-memory file storage
 const storage = multer.memoryStorage();
 
+// Multer middleware for handling multipart/form-data
 export const upload = multer({ storage });
 
+/**
+ * Generates a unique S3 object key for a user's uploaded file.
+ * Format: userId/timestamp-uuid.extension
+ */
 const generateS3Key = (userId: number, originalName: string): string => {
   const fileExt = path.extname(originalName);
   const uniqueName = `${Date.now()}-${randomUUID()}${fileExt}`;
@@ -23,6 +29,7 @@ export const uploadToS3 = async (file: Express.Multer.File, userId: number): Pro
     Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
+    ACL: 'private',
   });
 
   await s3.send(command);

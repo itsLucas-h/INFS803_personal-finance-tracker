@@ -4,13 +4,21 @@ import { Transaction } from '../models/index.js';
 export const createTransaction: Controller = async (req, res, next) => {
   try {
     const { type, category, amount, description, date } = req.body;
+    const userId = req.user?.id;
 
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    if (description && description.length > 100) {
+      return res.status(400).json({
+        message: 'Description must be 100 characters or less',
+        field: 'description',
+      });
     }
 
     const transaction = await Transaction.create({
-      userId: req.user.id,
+      userId,
       type,
       category,
       amount,
@@ -23,7 +31,7 @@ export const createTransaction: Controller = async (req, res, next) => {
       transaction,
     });
   } catch (error) {
-    console.error('❌ Error creating transaction:', error);
+    console.error('Error creating transaction:', error);
     next(error);
   }
 };
@@ -44,7 +52,7 @@ export const getTransactions: Controller = async (req, res, next) => {
       transactions,
     });
   } catch (error) {
-    console.error('❌ Error fetching transactions:', error);
+    console.error('Error fetching transactions:', error);
     next(error);
   }
 };
@@ -52,21 +60,40 @@ export const getTransactions: Controller = async (req, res, next) => {
 export const updateTransaction: Controller = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { type, category, amount, description, date } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    if (description && description.length > 100) {
+      return res.status(400).json({
+        message: 'Description must be 100 characters or less',
+        field: 'description',
+      });
+    }
 
     const transaction = await Transaction.findByPk(id);
 
-    if (!transaction || transaction.userId !== req.user?.id) {
+    if (!transaction || transaction.userId !== userId) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
 
-    await transaction.update(req.body);
+    await transaction.update({
+      type,
+      category,
+      amount,
+      description,
+      date,
+    });
 
     res.status(200).json({
       message: 'Transaction updated successfully',
       transaction,
     });
   } catch (error) {
-    console.error('❌ Error updating transaction:', error);
+    console.error('Error updating transaction:', error);
     next(error);
   }
 };
@@ -85,7 +112,7 @@ export const deleteTransaction: Controller = async (req, res, next) => {
 
     res.status(200).json({ message: 'Transaction deleted successfully' });
   } catch (error) {
-    console.error('❌ Error deleting transaction:', error);
+    console.error('Error deleting transaction:', error);
     next(error);
   }
 };

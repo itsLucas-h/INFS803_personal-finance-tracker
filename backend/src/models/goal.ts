@@ -1,7 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db.js';
 
-// Full shape of the Goal model
 interface GoalAttributes {
   id: number;
   userId: number;
@@ -50,7 +49,7 @@ Goal.init(
     },
     deadline: {
       type: DataTypes.DATEONLY,
-      allowNull: true,
+      allowNull: false,
     },
   },
   {
